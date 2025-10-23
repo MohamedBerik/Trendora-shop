@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkmainreact=self.webpackChunkmainreact||[]).push([[174],{174:e=>{e.exports=JSON.parse('{"nav":{"home":"Home","products":"Products","new_arrivals":"New Arrivals","best_sellers":"Best Sellers","blog":"Blog","contact":"Contact"},"common":{"search":"Search...","cart":"Shopping Cart","wishlist":"Wishlist","login":"Sign In","logout":"Sign Out"}}')}}]);
