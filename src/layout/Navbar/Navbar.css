@@ -1,0 +1,17 @@
+.btn-signup {
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.btn-signup:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.navbar-nav {
+  overflow: visible !important;
+}
+
+.mega-menu a:hover {
+  background-color: rgba(0,123,255,0.1);
+}
