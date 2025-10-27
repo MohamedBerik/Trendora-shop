@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap');
+/* تحسينات عامة للأداء والتجربة */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', 'Cairo', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* تحسينات للأداء */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* تحميل سريع للخطوط */
+body {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  /* src: url('/fonts/Cairo-Regular.woff2') format('woff2'); */
+}
+
+/* دعم الوضع الداكن */
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --text-primary: #ffffff;
+  /* إضافة المتغيرات الأخرى */
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* إخفاء شريط التمرير مع الحفاظ على الوظيفة */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--main-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}

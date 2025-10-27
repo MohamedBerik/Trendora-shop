@@ -1,0 +1,143 @@
+
+/* أنماط خاصة بصفحة البروفايل */
+.profile-glass-effect {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+}
+
+.profile-shadow {
+  box-shadow: 
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
+    0 2px 8px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* تحسينات للشريط الجانبي على الجوال */
+@media (max-width: 991.98px) {
+  .profile-sidebar-mobile {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 280px;
+    height: 100vh;
+    z-index: 1050;
+    transition: left 0.3s ease;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .profile-sidebar-mobile.open {
+    left: 0;
+  }
+  
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* تحسينات للبطاقات */
+.profile-card {
+  background: white;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* أنيميشن للتبويبات */
+.tab-transition-enter {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.tab-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease;
+}
+
+.tab-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.tab-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: all 0.3s ease;
+}
+
+/* تدرجات الألوان */
+.gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.gradient-warning {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.personal-info-card {
+  transition: all 0.3s ease;
+}
+
+.personal-info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+  .personal-info-card {
+    margin: 1rem;
+    border-radius: 15px;
+  }
+}
+
+

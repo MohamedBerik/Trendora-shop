@@ -1,0 +1,44 @@
+// services/api.js - خدمة API الأساسية
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+// إنشاء instance لـ Axios
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request Interceptor
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response Interceptor
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // معالجة انتهاء صلاحية التوكن
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export { api };

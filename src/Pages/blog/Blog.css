@@ -1,0 +1,281 @@
+.blog-page {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+}
+
+/* الهيدر */
+.blog-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.blog-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: url('/images/blog/pattern.svg') repeat; */
+  opacity: 0.1;
+}
+
+/* البحث */
+.search-box {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.search-box .form-control {
+  padding: 12px 20px;
+  border: none;
+  font-size: 1rem;
+}
+
+.search-box .btn {
+  padding: 12px 20px;
+  border: none;
+  background: #667eea;
+}
+
+/* البطاقات */
+.blog-post-card {
+  transition: all 0.3s ease;
+}
+
+.blog-post-card:hover {
+  transform: translateY(-5px);
+}
+
+.post-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+
+.post-image {
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.blog-post-card:hover .post-image {
+  transform: scale(1.05);
+}
+
+.post-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.blog-post-card:hover .post-overlay {
+  opacity: 1;
+}
+
+.category-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+}
+
+.post-title {
+  color: #2d3748;
+  font-weight: 600;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+}
+
+.post-title:hover {
+  color: #667eea;
+}
+
+.post-excerpt {
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-meta {
+  font-size: 0.85rem;
+}
+
+.post-tags .badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border: 1px solid #667eea;
+}
+
+/* الشريط الجانبي */
+.blog-sidebar {
+  position: sticky;
+  top: 2rem;
+}
+
+.sidebar-widget {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.sidebar-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #667eea;
+}
+
+.category-list .category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.category-list .category-item:hover {
+  color: #667eea;
+  background: #f8fafc;
+  padding-left: 0.5rem;
+}
+
+.category-list .category-item:last-child {
+  border-bottom: none;
+}
+
+.popular-post {
+  display: flex;
+  gap: 12px;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.popular-post:hover {
+  background: #f8fafc;
+  padding-left: 0.5rem;
+}
+
+.popular-post:last-child {
+  border-bottom: none;
+}
+
+.popular-post-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.popular-post-content {
+  flex: 1;
+}
+
+.popular-post-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.popular-post-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* النشرة البريدية */
+.newsletter-section {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 4rem 0;
+  margin-top: 4rem;
+}
+
+.newsletter-content {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.newsletter-form {
+  max-width: 400px;
+  margin: 2rem auto 0;
+}
+
+/* Pagination */
+.blog-pagination .btn {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+}
+
+/* الحالة الفارغة */
+.empty-state {
+  padding: 3rem 2rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+/* التجاوب */
+@media (max-width: 768px) {
+  .blog-header {
+    padding: 2rem 0;
+  }
+  
+  .blog-controls .row {
+    gap: 1rem;
+  }
+  
+  .categories-filter .d-flex {
+    justify-content: center !important;
+  }
+  
+  .post-image {
+    height: 180px;
+  }
+  
+  .popular-post {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .popular-post-image {
+    width: 100%;
+    height: 120px;
+    margin-bottom: 0.5rem;
+  }
+}

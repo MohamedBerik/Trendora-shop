@@ -1,0 +1,17 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products", 
+    "new_arrivals": "New Arrivals",
+    "best_sellers": "Best Sellers",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "common": {
+    "search": "Search...",
+    "cart": "Shopping Cart",
+    "wishlist": "Wishlist",
+    "login": "Sign In",
+    "logout": "Sign Out"
+  }
+}
