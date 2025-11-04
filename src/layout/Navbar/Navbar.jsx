@@ -684,7 +684,7 @@ export default function ModernNavbar() {
                         });
                       }}
                     >
-                      <FaTimes size={14} />
+                      {/* <FaTimes size={14} /> */}
                     </motion.button>
                   )}
 
@@ -698,7 +698,7 @@ export default function ModernNavbar() {
                       zIndex: 1001,
                     }}
                   >
-                    <FaSearch size={16} />
+                    {/* <FaSearch size={16} /> */}
                   </div>
 
                   {/* Enhanced Suggestions Dropdown */}

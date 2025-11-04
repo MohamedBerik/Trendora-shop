@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import Banner from "./Banner/Banner";
+import Banner from "./Banner";
 import Categories from "./Categories";
 import Features from "./Features";
 import SpecialOffers from "./SpecialOffers";
@@ -8,7 +8,7 @@ import Testimonials from "./Testimonials";
 import CTA from "./CTA";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics, useTrackPageView } from "../hooks/hooks-exports";
+import { useAnalytics, useTrackPageView } from "../../hooks/hooks-exports";
 
 // مكتبات خارجية
 import AOS from "aos";

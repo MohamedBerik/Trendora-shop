@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "react-use-cart";
 import { useWishlist } from "../../context/WishlistContext";
-import { 
+import { useAnalytics } from '../../hooks/useAnalytics';
+import {
   FaHeart,
   FaShoppingCart,
   FaTrash,
@@ -27,197 +28,27 @@ import {
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
-// 🔍 خدمة الإحصائيات المحسنة
-class EnhancedAnalyticsService {
-  constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-    this.sessionId = this.generateSessionId();
-  }
-
-  generateSessionId() {
-    let sessionId = sessionStorage.getItem('analytics_session_id');
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.setItem('analytics_session_id', sessionId);
-    }
-    return sessionId;
-  }
-
-  async trackEvent(eventName, metadata = {}) {
-    const data = {
-      type: 'user_action',
-      event_name: eventName,
-      session_id: this.sessionId,
-      timestamp: new Date().toISOString(),
-      user_agent: navigator.userAgent,
-      url: window.location.href,
-      path: window.location.pathname,
-      ...metadata
-    };
-    return this.sendToBackend(data);
-  }
-
-  // دعم التوافق مع useAnalytics
-  trackUserAction = this.trackEvent;
-  
-  async trackPageView(pageName, additionalData = {}) {
-    return this.trackEvent('page_view', {
-      page_name: pageName,
-      ...additionalData
-    });
-  }
-
-  async trackError(errorType, message, component = '', metadata = {}) {
-    return this.trackEvent('error_occurred', {
-      error_type: errorType,
-      error_message: message,
-      component,
-      ...metadata
-    });
-  }
-
-  // دوال متخصصة للمفضلة
-  async trackWishlistAction(action, metadata = {}) {
-    return this.trackEvent(`wishlist_${action}`, {
-      ...metadata
-    });
-  }
-
-  async trackProductInteraction(action, product, metadata = {}) {
-    return this.trackEvent(`wishlist_${action}`, {
-      product_id: product.productId || product.id,
-      product_title: product.title,
-      product_category: product.category,
-      product_price: product.price,
-      ...metadata
-    });
-  }
-
-  async trackAddToCart(productId, quantity, price, title = '', metadata = {}) {
-    return this.trackEvent('add_to_cart', {
-      product_id: productId,
-      quantity,
-      price,
-      product_title: title,
-      total_value: price * quantity,
-      ...metadata
-    });
-  }
-
-  async sendToBackend(data) {
-    try {
-      const response = await fetch(`${this.baseURL}/analytics`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Analytics error:', error);
-      this.saveOffline(data);
-      return { success: false, offline: true };
-    }
-  }
-
-  saveOffline(data) {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      offlineData.push({
-        ...data, 
-        offline: true,
-        offline_saved_at: new Date().toISOString()
-      });
-      
-      const trimmedData = offlineData.slice(-100);
-      localStorage.setItem('offline_analytics', JSON.stringify(trimmedData));
-    } catch (error) {
-      console.error('Failed to save offline analytics:', error);
-    }
-  }
-
-  // دالة لمحاولة إرسال البيانات المخزنة
-  async flushOfflineData() {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      
-      for (const data of offlineData) {
-        await this.sendToBackend(data);
-      }
-      
-      localStorage.removeItem('offline_analytics');
-      return { success: true, sent_count: offlineData.length };
-    } catch (error) {
-      console.error('Failed to flush offline data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // تنظيف البيانات القديمة
-  cleanupOldData() {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      const freshData = offlineData.filter(item => {
-        const itemDate = new Date(item.offline_saved_at || item.timestamp);
-        return itemDate > oneWeekAgo;
-      });
-      
-      localStorage.setItem('offline_analytics', JSON.stringify(freshData));
-      return { cleaned_count: offlineData.length - freshData.length };
-    } catch (error) {
-      console.error('Failed to cleanup old data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // الحصول على معلومات الجلسة
-  getSessionInfo() {
-    return {
-      session_id: this.sessionId,
-      session_start: sessionStorage.getItem('session_start_time'),
-      user_agent: navigator.userAgent
-    };
-  }
-
-  // الحصول على ID المستخدم
-  _getUserId() {
-    return localStorage.getItem('user_id') || 'anonymous';
-  }
-}
-
-export const analyticsService = new EnhancedAnalyticsService();
-
-// 🔧 دالة مساعدة للتتبع الآمن
-const safeTrack = (trackingFunction, ...args) => {
-  try {
-    return trackingFunction(...args);
-  } catch (error) {
-    console.error('Tracking error:', error);
-    return { success: false, error: error.message };
-  }
-};
-
 function WishlistPage() {
   const navigate = useNavigate();
   const { addItem, items } = useCart();
-  const { 
-    wishlist, 
-    removeFromWishlist, 
-    updateNote, 
+  const {
+    wishlist,
+    removeFromWishlist,
+    updateNote,
     updatePriority,
     isInWishlist,
     clearWishlist
   } = useWishlist();
   
+  // استخدام هوك التحليلات الموحد
+  const {
+    trackEvent,
+    trackPageView,
+    trackProductView,
+    trackAddToCart,
+    trackError
+  } = useAnalytics();
+
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -249,10 +80,10 @@ function WishlistPage() {
                            item.category?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-      
+     
       const matchesPriority = priorityFilter === "all" || item.priority === priorityFilter;
-      
-      const matchesPrice = priceFilter === "all" || 
+     
+      const matchesPrice = priceFilter === "all" ||
                           (priceFilter === "under50" && item.price < 50) ||
                           (priceFilter === "50-100" && item.price >= 50 && item.price <= 100) ||
                           (priceFilter === "over100" && item.price > 100);
@@ -299,24 +130,24 @@ function WishlistPage() {
     const inStock = wishlistProducts.filter(item => item.stock > 0).length;
     const withNotes = wishlistProducts.filter(item => item.note && item.note.trim()).length;
     const averagePrice = total > 0 ? totalValue / total : 0;
-    
+   
     // Category distribution
     const categoryDistribution = wishlistProducts.reduce((acc, item) => {
       acc[item.category] = (acc[item.category] || 0) + 1;
       return acc;
     }, {});
-    
+   
     // Priority distribution
     const priorityDistribution = wishlistProducts.reduce((acc, item) => {
       acc[item.priority] = (acc[item.priority] || 0) + 1;
       return acc;
     }, {});
-    
-    return { 
-      total, 
-      totalValue, 
-      highPriority, 
-      inStock, 
+   
+    return {
+      total,
+      totalValue,
+      highPriority,
+      inStock,
       withNotes,
       averagePrice,
       categoryDistribution,
@@ -329,17 +160,32 @@ function WishlistPage() {
     return items.some(item => item.id == productId);
   }, [items]);
 
-  // تتبع أحداث التحليلات
+  // 🔧 دالة مساعدة للتتبع الآمن مع النظام الموحد
+  const safeTrack = useCallback((trackingFunction, ...args) => {
+    try {
+      return trackingFunction(...args);
+    } catch (error) {
+      console.error('Tracking error:', error);
+      trackError('tracking_error', error.message, 'WishlistPage');
+      return { success: false, error: error.message };
+    }
+  }, [trackError]);
+
+  // تتبع أحداث التحليلات باستخدام النظام الموحد
   const trackWishlistAction = useCallback((action, metadata = {}) => {
-    safeTrack(analyticsService.trackWishlistAction, action, {
+    return safeTrack(trackEvent, `wishlist_${action}`, {
       wishlist_count: wishlist.length,
       wishlist_stats: wishlistStats,
       ...metadata
     });
-  }, [wishlist.length, wishlistStats]);
+  }, [wishlist.length, wishlistStats, trackEvent, safeTrack]);
 
   const trackProductAction = useCallback((action, product, metadata = {}) => {
-    safeTrack(analyticsService.trackProductInteraction, action, product, {
+    return safeTrack(trackEvent, `wishlist_${action}`, {
+      product_id: product.productId || product.id,
+      product_title: product.title,
+      product_category: product.category,
+      product_price: product.price,
       wishlist_context: {
         current_wishlist_size: wishlist.length,
         item_priority: product.priority,
@@ -347,15 +193,15 @@ function WishlistPage() {
       },
       ...metadata
     });
-  }, [wishlist.length]);
+  }, [wishlist.length, trackEvent, safeTrack]);
 
-  // تتبع عرض صفحة المفضلة
+  // تتبع عرض صفحة المفضلة باستخدام النظام الموحد
   useEffect(() => {
     const startTime = Date.now();
     setPageViewStartTime(startTime);
 
-    // 🔍 تتبع عرض صفحة المفضلة
-    safeTrack(analyticsService.trackPageView, 'wishlist', {
+    // تتبع عرض الصفحة باستخدام النظام الموحد
+    safeTrack(trackPageView, 'wishlist', {
       wishlist_items_count: wishlist.length,
       wishlist_total_value: wishlistStats.totalValue,
       wishlist_analytics: {
@@ -365,8 +211,8 @@ function WishlistPage() {
       }
     });
     
-    // 🔍 تتبع عرض المفضلة كصفحة
-    safeTrack(analyticsService.trackWishlistAction, 'page_view', {
+    // تتبع عرض المفضلة كحدث منفصل
+    safeTrack(trackEvent, 'wishlist_page_view', {
       session_start_time: startTime,
       initial_wishlist_state: {
         items: wishlist.length,
@@ -379,7 +225,7 @@ function WishlistPage() {
     return () => {
       if (startTime) {
         const viewDuration = Date.now() - startTime;
-        safeTrack(analyticsService.trackWishlistAction, 'session_end', {
+        safeTrack(trackEvent, 'wishlist_session_end', {
           total_duration_ms: viewDuration,
           final_wishlist_state: {
             items: wishlist.length,
@@ -391,13 +237,13 @@ function WishlistPage() {
         });
       }
     };
-  }, []);
+  }, [wishlist.length, wishlistStats, trackPageView, trackEvent, safeTrack]);
 
   // Handlers
   const handleRemoveFromWishlist = useCallback((wishlistId, product, e) => {
     e?.stopPropagation();
-    
-    // 🔍 تتبع إزالة المنتج من المفضلة
+   
+    // تتبع إزالة المنتج من المفضلة
     trackProductAction('remove', product, {
       removal_context: {
         time_on_page: Date.now() - (pageViewStartTime || Date.now()),
@@ -405,7 +251,7 @@ function WishlistPage() {
         was_selected: selectedItems.has(wishlistId)
       }
     });
-    
+   
     removeFromWishlist(wishlistId);
     setSelectedItems(prev => {
       const newSet = new Set(prev);
@@ -418,8 +264,8 @@ function WishlistPage() {
 
   const addToCartFromWishlist = useCallback((product, e) => {
     e?.stopPropagation();
-    
-    // 🔍 تتبع إضافة المنتج إلى السلة من المفضلة
+   
+    // تتبع إضافة المنتج إلى السلة من المفضلة
     trackProductAction('add_to_cart', product, {
       from_wishlist: true,
       conversion_context: {
@@ -428,36 +274,30 @@ function WishlistPage() {
         had_note: !!(product.note && product.note.trim())
       }
     });
-    
-    // 🔍 تتبع إضافة إلى السلة للتحليلات العامة
-    safeTrack(analyticsService.trackAddToCart,
-      product.productId || product.id,
-      1,
-      product.price,
-      product.title,
-      {
-        source: 'wishlist_page',
-        wishlist_metrics: {
-          priority: product.priority,
-          time_in_wishlist: Date.now() - new Date(product.addedDate),
-          had_note: !!(product.note && product.note.trim())
-        }
+   
+    // استخدام دالة trackAddToCart من النظام الموحد
+    safeTrack(trackAddToCart, product, 1, {
+      source: 'wishlist_page',
+      wishlist_metrics: {
+        priority: product.priority,
+        time_in_wishlist: Date.now() - new Date(product.addedDate),
+        had_note: !!(product.note && product.note.trim())
       }
-    );
-    
+    });
+   
     addItem({
       ...product,
       id: product.productId || product.id
     });
     setInteractionCount(prev => prev + 1);
-  }, [addItem, trackProductAction]);
+  }, [addItem, trackProductAction, trackAddToCart, safeTrack]);
 
   const toggleSelectItem = useCallback((wishlistId, product) => {
     setSelectedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(wishlistId)) {
         newSet.delete(wishlistId);
-        // 🔍 تتبع إلغاء تحديد المنتج
+        // تتبع إلغاء تحديد المنتج
         trackProductAction('deselect', product, {
           selection_context: {
             total_selected: newSet.size,
@@ -466,7 +306,7 @@ function WishlistPage() {
         });
       } else {
         newSet.add(wishlistId);
-        // 🔍 تتبع تحديد المنتج
+        // تتبع تحديد المنتج
         trackProductAction('select', product, {
           selection_context: {
             total_selected: newSet.size,
@@ -482,13 +322,13 @@ function WishlistPage() {
   const selectAllItems = useCallback(() => {
     if (selectedItems.size === filteredWishlist.length) {
       setSelectedItems(new Set());
-      // 🔍 تتبع إلغاء تحديد الكل
+      // تتبع إلغاء تحديد الكل
       trackWishlistAction('deselect_all', {
         previous_selection_count: selectedItems.size
       });
     } else {
       setSelectedItems(new Set(filteredWishlist.map(item => item.id)));
-      // 🔍 تتبع تحديد الكل
+      // تتبع تحديد الكل
       trackWishlistAction('select_all', {
         items_count: filteredWishlist.length,
         selection_value: filteredWishlist.reduce((sum, item) => sum + item.price, 0)
@@ -498,7 +338,7 @@ function WishlistPage() {
   }, [filteredWishlist, selectedItems.size, trackWishlistAction]);
 
   const removeSelectedItems = useCallback(() => {
-    // 🔍 تتبع إزالة العناصر المحددة
+    // تتبع إزالة العناصر المحددة
     trackWishlistAction('remove_selected', {
       items_count: selectedItems.size,
       total_value: filteredWishlist
@@ -516,11 +356,11 @@ function WishlistPage() {
           .map(item => item.category))]
       }
     });
-    
+   
     selectedItems.forEach(id => {
       const product = wishlistProducts.find(item => item.id === id);
       if (product) {
-        trackProductAction('remove', product, { 
+        trackProductAction('remove', product, {
           bulk: true,
           removal_reason: 'bulk_action'
         });
@@ -535,8 +375,8 @@ function WishlistPage() {
   const addSelectedToCart = useCallback(() => {
     const selectedProducts = filteredWishlist.filter(item => selectedItems.has(item.id));
     const totalValue = selectedProducts.reduce((sum, item) => sum + item.price, 0);
-    
-    // 🔍 تتبع إضافة العناصر المحددة إلى السلة
+   
+    // تتبع إضافة العناصر المحددة إلى السلة
     trackWishlistAction('add_selected_to_cart', {
       items_count: selectedItems.size,
       total_value: totalValue,
@@ -549,7 +389,7 @@ function WishlistPage() {
         categories_added: [...new Set(selectedProducts.map(item => item.category))]
       }
     });
-    
+   
     selectedProducts.forEach(product => {
       addToCartFromWishlist(product);
     });
@@ -557,7 +397,7 @@ function WishlistPage() {
   }, [filteredWishlist, selectedItems, addToCartFromWishlist, trackWishlistAction]);
 
   const handleUpdatePriority = useCallback((wishlistId, priority, product) => {
-    // 🔍 تتبع تحديث الأولوية
+    // تتبع تحديث الأولوية
     trackProductAction('update_priority', product, {
       old_priority: product.priority,
       new_priority: priority,
@@ -566,20 +406,20 @@ function WishlistPage() {
         interaction_sequence: interactionCount + 1
       }
     });
-    
+   
     updatePriority(wishlistId, priority);
     setInteractionCount(prev => prev + 1);
     setWishlistModifications(prev => prev + 1);
   }, [updatePriority, trackProductAction, pageViewStartTime, interactionCount]);
 
   const handleUpdateNote = useCallback((wishlistId, note, product) => {
-    // 🔍 تتبع تحديث الملاحظة
+    // تتبع تحديث الملاحظة
     trackProductAction('update_note', product, {
       note_length: note?.length || 0,
       had_previous_note: !!(product.note && product.note.trim()),
       update_type: note ? (product.note ? 'updated' : 'added') : 'removed'
     });
-    
+   
     updateNote(wishlistId, note);
     setShowNoteModal(null);
     setInteractionCount(prev => prev + 1);
@@ -587,7 +427,7 @@ function WishlistPage() {
   }, [updateNote, trackProductAction]);
 
   const clearAllWishlist = useCallback(() => {
-    // 🔍 تتبع تفريغ المفضلة
+    // تتبع تفريغ المفضلة
     trackWishlistAction('clear_all', {
       items_count: wishlist.length,
       total_value: wishlistStats.totalValue,
@@ -597,7 +437,7 @@ function WishlistPage() {
         notes_lost: wishlistStats.withNotes
       }
     });
-    
+   
     clearWishlist();
     setSelectedItems(new Set());
     setShowClearConfirm(false);
@@ -606,7 +446,7 @@ function WishlistPage() {
   }, [clearWishlist, wishlist.length, wishlistStats, trackWishlistAction]);
 
   const clearFilters = useCallback(() => {
-    // 🔍 تتبع مسح الفلاتر
+    // تتبع مسح الفلاتر
     trackWishlistAction('clear_filters', {
       previous_filters: {
         search: searchTerm,
@@ -617,7 +457,7 @@ function WishlistPage() {
       },
       filter_usage_duration: Date.now() - (pageViewStartTime || Date.now())
     });
-    
+   
     setSearchTerm("");
     setCategoryFilter("all");
     setPriorityFilter("all");
@@ -628,7 +468,7 @@ function WishlistPage() {
 
   const handleProductClick = useCallback((productId, product, e) => {
     if (!e.target.closest('button') && !e.target.closest('a')) {
-      // 🔍 تتبع النقر على المنتج للذهاب إلى صفحة المنتج
+      // تتبع النقر على المنتج للذهاب إلى صفحة المنتج
       trackProductAction('click_through', product, {
         navigation_context: {
           time_in_wishlist: Date.now() - new Date(product.addedDate),
@@ -636,26 +476,35 @@ function WishlistPage() {
           had_note: !!(product.note && product.note.trim())
         }
       });
-      
+     
+      // استخدام دالة trackProductView من النظام الموحد
+      safeTrack(trackProductView, product, {
+        source: 'wishlist_page',
+        wishlist_context: {
+          time_in_wishlist: Date.now() - new Date(product.addedDate),
+          priority: product.priority
+        }
+      });
+     
       navigate(`/singleproduct/${productId}`);
     }
-  }, [navigate, trackProductAction]);
+  }, [navigate, trackProductAction, trackProductView, safeTrack]);
 
   const handleQuickView = useCallback((product) => {
-    // 🔍 تتبع العرض السريع
+    // تتبع العرض السريع
     trackProductAction('quick_view', product, {
       view_context: {
         time_on_page: Date.now() - (pageViewStartTime || Date.now()),
         interaction_number: interactionCount + 1
       }
     });
-    
+   
     setQuickView(product);
     setInteractionCount(prev => prev + 1);
   }, [trackProductAction, pageViewStartTime, interactionCount]);
 
   const handleSearch = useCallback((term) => {
-    // 🔍 تتبع البحث في المفضلة
+    // تتبع البحث في المفضلة
     if (term) {
       trackWishlistAction('search', {
         search_term: term,
@@ -668,7 +517,7 @@ function WishlistPage() {
   }, [filteredWishlist.length, trackWishlistAction, pageViewStartTime]);
 
   const handleFilterChange = useCallback((filterType, value) => {
-    // 🔍 تتبع تغيير الفلاتر
+    // تتبع تغيير الفلاتر
     trackWishlistAction('filter_change', {
       filter_type: filterType,
       filter_value: value,
@@ -680,7 +529,7 @@ function WishlistPage() {
         sort: sortBy
       }
     });
-    
+   
     switch (filterType) {
       case 'category':
         setCategoryFilter(value);
@@ -700,7 +549,7 @@ function WishlistPage() {
     setInteractionCount(prev => prev + 1);
   }, [searchTerm, categoryFilter, priorityFilter, priceFilter, sortBy, trackWishlistAction]);
 
-  // 🔍 تتبع تصدير المفضلة
+  // تتبع تصدير المفضلة
   const handleExportWishlist = useCallback(() => {
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -717,7 +566,7 @@ function WishlistPage() {
       }))
     };
 
-    // 🔍 تتبع تصدير المفضلة
+    // تتبع تصدير المفضلة
     trackWishlistAction('export', {
       items_count: wishlist.length,
       export_format: 'json',
@@ -755,7 +604,7 @@ function WishlistPage() {
   // Wishlist item component
   const WishlistItem = ({ item, index }) => {
     const inCart = isInCart(item.productId || item.id);
-    
+   
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -800,7 +649,7 @@ function WishlistPage() {
                 e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjhmOWZhIi8+PHRleHQgeD0iMTUwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+';
               }}
             />
-            
+           
             {/* Quick Actions Overlay */}
             <div className="wishlist-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
               <div className="btn-group">
@@ -852,7 +701,7 @@ function WishlistPage() {
 
             {/* Title */}
             <h6 className="card-title fw-semibold mb-2 flex-grow-1 wishlist-title">
-              <Link 
+              <Link
                 to={`/singleproduct/${item.productId || item.id}`}
                 className="text-decoration-none text-dark"
                 onClick={() => trackProductAction('click_through', item)}
@@ -868,8 +717,8 @@ function WishlistPage() {
                   <FaStar
                     key={i}
                     className={`${
-                      i < Math.floor(item.rating || 0) 
-                        ? "text-warning" 
+                      i < Math.floor(item.rating || 0)
+                        ? "text-warning"
                         : "text-muted"
                     } me-1`}
                     size={12}
@@ -922,7 +771,7 @@ function WishlistPage() {
                   Add to Cart
                 </button>
               )}
-              
+             
               {/* زر القلب الشفاف */}
               <button
                 className="btn btn-outline-danger btn-sm transparent-heart-btn"
@@ -1001,8 +850,8 @@ function WishlistPage() {
                           <FaStar
                             key={i}
                             className={`${
-                              i < Math.floor(quickView.rating || 0) 
-                                ? "text-warning" 
+                              i < Math.floor(quickView.rating || 0)
+                                ? "text-warning"
                                 : "text-muted"
                             } me-1`}
                           />
@@ -1011,7 +860,7 @@ function WishlistPage() {
                       <span className="text-muted">({quickView.rating || "N/A"})</span>
                     </div>
                     <p className="text-muted">{quickView.description}</p>
-                    
+                   
                     {/* Priority and Note */}
                     <div className="mb-3">
                       <strong>Priority:</strong> <PriorityBadge priority={quickView.priority} />
@@ -1169,7 +1018,7 @@ function WishlistPage() {
               <div className="modal-body">
                 <p>Are you sure you want to clear your entire wishlist? This action cannot be undone.</p>
                 <p className="text-muted">This will remove {wishlist.length} items from your wishlist.</p>
-                
+               
                 {/* Analytics Summary */}
                 <div className="bg-light rounded-3 p-3 mt-3">
                   <h6 className="fw-semibold mb-2">Wishlist Analytics</h6>
@@ -1223,7 +1072,7 @@ function WishlistPage() {
               <p className="text-muted mb-0">
                 Save your favorite items for later
               </p>
-              
+             
               {/* Analytics Badges */}
               <div className="d-flex gap-2 mt-2">
                 <span className="badge bg-info">
@@ -1344,7 +1193,7 @@ function WishlistPage() {
                       </label>
                     </div>
                   </div>
-                  
+                 
                   <div className="d-flex gap-2 flex-wrap">
                     {selectedItems.size > 0 && (
                       <>
@@ -1364,7 +1213,7 @@ function WishlistPage() {
                         </button>
                       </>
                     )}
-                    
+                   
                     <button
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => {
@@ -1469,7 +1318,7 @@ function WishlistPage() {
                       </select>
                     </div>
                   </div>
-                  
+                 
                   {/* Active Filters */}
                   {(searchTerm || categoryFilter !== 'all' || priorityFilter !== 'all' || priceFilter !== 'all') && (
                     <div className="mt-3 d-flex align-items-center gap-2 flex-wrap">
@@ -1477,7 +1326,7 @@ function WishlistPage() {
                       {searchTerm && (
                         <span className="badge bg-primary">
                           Search: {searchTerm}
-                          <button 
+                          <button
                             className="btn-close btn-close-white ms-1"
                             onClick={() => setSearchTerm("")}
                           />
@@ -1486,7 +1335,7 @@ function WishlistPage() {
                       {categoryFilter !== 'all' && (
                         <span className="badge bg-secondary">
                           Category: {categoryFilter}
-                          <button 
+                          <button
                             className="btn-close btn-close-white ms-1"
                             onClick={() => setCategoryFilter("all")}
                           />
@@ -1495,7 +1344,7 @@ function WishlistPage() {
                       {priorityFilter !== 'all' && (
                         <span className="badge bg-warning">
                           Priority: {priorityFilter}
-                          <button 
+                          <button
                             className="btn-close btn-close-white ms-1"
                             onClick={() => setPriorityFilter("all")}
                           />
@@ -1504,13 +1353,13 @@ function WishlistPage() {
                       {priceFilter !== 'all' && (
                         <span className="badge bg-info">
                           Price: {priceFilter}
-                          <button 
+                          <button
                             className="btn-close btn-close-white ms-1"
                             onClick={() => setPriceFilter("all")}
                           />
                         </span>
                       )}
-                      <button 
+                      <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={clearFilters}
                       >
@@ -1532,7 +1381,7 @@ function WishlistPage() {
             >
               <div className="fs-1 mb-3">💝</div>
               <h4 className="text-muted mb-3">
-                {wishlist.length === 0 
+                {wishlist.length === 0
                   ? "Your wishlist is empty"
                   : "No items match your filters"
                 }
@@ -1713,7 +1562,7 @@ function WishlistPage() {
           .stat-value {
             font-size: 1.5rem;
           }
-          
+         
           .stat-icon {
             width: 40px;
             height: 40px;

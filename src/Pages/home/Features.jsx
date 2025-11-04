@@ -4,10 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaStar, FaStarHalfAlt, FaRegStar, FaShoppingCart, FaHeart, FaEye, FaTimes, FaPlus, FaMinus, FaShare, FaCheck, FaTruck, FaShieldAlt, FaSync } from "react-icons/fa";
 import { useCart } from "react-use-cart";
-import { useWishlist } from "../context/WishlistContext";
+import { useWishlist } from "../../context/WishlistContext";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics } from "../hooks/hooks-exports";
+import { useAnalytics } from "../../hooks/hooks-exports";
 
 function Features({ onSectionView }) {
   const [darkMode, setDarkMode] = useState(false);

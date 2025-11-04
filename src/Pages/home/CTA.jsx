@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics } from "../hooks/hooks-exports";
+import { useAnalytics } from "../../hooks/hooks-exports";
 
 function CTA({ onSectionView }) {
   const navigate = useNavigate();

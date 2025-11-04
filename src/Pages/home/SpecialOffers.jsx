@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { FaClock, FaFire, FaArrowRight, FaTag, FaShoppingBag } from "react-icons/fa";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics } from "../hooks/hooks-exports";
+import { useAnalytics } from "../../hooks/hooks-exports";
 
 function SpecialOffers({ onSectionView }) {
   const [darkMode, setDarkMode] = useState(false);

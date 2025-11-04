@@ -8,7 +8,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics } from "../hooks/hooks-exports";
+import { useAnalytics } from "../../hooks/hooks-exports";
 
 function Categories({ onSectionView }) {
   const [darkMode, setDarkMode] = useState(false);

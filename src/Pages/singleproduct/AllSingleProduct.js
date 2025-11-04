@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useMemo, useCallback } from "react";
+import React, { useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { apiValue } from "../../constants/AllData";
 import { useCart } from "react-use-cart";
@@ -20,223 +20,23 @@ import {
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
-// 🔍 استيراد خدمة التحليلات المحسنة
-class EnhancedAnalyticsService {
-  constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-    this.sessionId = this.generateSessionId();
-  }
-
-  generateSessionId() {
-    let sessionId = sessionStorage.getItem('analytics_session_id');
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.setItem('analytics_session_id', sessionId);
-    }
-    return sessionId;
-  }
-
-  async trackEvent(eventName, metadata = {}) {
-    const data = {
-      type: 'user_action',
-      event_name: eventName,
-      session_id: this.sessionId,
-      timestamp: new Date().toISOString(),
-      user_agent: navigator.userAgent,
-      url: window.location.href,
-      path: window.location.pathname,
-      ...metadata
-    };
-    return this.sendToBackend(data);
-  }
-
-  // دعم التوافق مع useAnalytics
-  trackUserAction = this.trackEvent;
-  
-  async trackPageView(pageName, additionalData = {}) {
-    return this.trackEvent('page_view', {
-      page_name: pageName,
-      ...additionalData
-    });
-  }
-
-  async trackError(errorType, message, component = '', metadata = {}) {
-    return this.trackEvent('error_occurred', {
-      error_type: errorType,
-      error_message: message,
-      component,
-      ...metadata
-    });
-  }
-
-  // الدوال الحالية محسنة
-  async trackProductView(productId, category, title = '', metadata = {}) {
-    return this.trackEvent('product_view', {
-      product_id: productId,
-      category,
-      product_title: title,
-      view_type: 'single_product_page',
-      ...metadata
-    });
-  }
-
-  async trackAddToCart(productId, quantity, price, title = '', metadata = {}) {
-    return this.trackEvent('add_to_cart', {
-      product_id: productId,
-      quantity,
-      price,
-      product_title: title,
-      total_value: price * quantity,
-      ...metadata
-    });
-  }
-
-  async trackSearch(term, resultsCount = 0, metadata = {}) {
-    return this.trackEvent('search', {
-      term,
-      results_count: resultsCount,
-      search_type: 'product_search',
-      ...metadata
-    });
-  }
-
-  async trackCategoryView(category, metadata = {}) {
-    return this.trackEvent('category_view', {
-      category,
-      view_type: 'products_listing',
-      ...metadata
-    });
-  }
-
-  // دوال جديدة لتحليلات أكثر دقة
-  async trackFilterApplied(filterType, value, resultsCount, metadata = {}) {
-    return this.trackEvent('filter_applied', {
-      filter_type: filterType,
-      filter_value: value,
-      results_count_after_filter: resultsCount,
-      ...metadata
-    });
-  }
-
-  async trackSortApplied(sortBy, resultsCount, metadata = {}) {
-    return this.trackEvent('sort_applied', {
-      sort_by: sortBy,
-      results_count: resultsCount,
-      ...metadata
-    });
-  }
-
-  async trackProductInteraction(action, productId, metadata = {}) {
-    return this.trackEvent(`product_${action}`, {
-      product_id: productId,
-      ...metadata
-    });
-  }
-
-  async sendToBackend(data) {
-    try {
-      const response = await fetch(`${this.baseURL}/analytics`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Analytics error:', error);
-      this.saveOffline(data);
-      // لا ترمي خطأ حتى لا تؤثر على تجربة المستخدم
-      return { success: false, offline: true };
-    }
-  }
-
-  saveOffline(data) {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      offlineData.push({
-        ...data, 
-        offline: true,
-        offline_saved_at: new Date().toISOString()
-      });
-      
-      // حفظ فقط آخر 100 حدث لتجنب امتلاء التخزين
-      const trimmedData = offlineData.slice(-100);
-      localStorage.setItem('offline_analytics', JSON.stringify(trimmedData));
-    } catch (error) {
-      console.error('Failed to save offline analytics:', error);
-    }
-  }
-
-  // دالة لمحاولة إرسال البيانات المخزنة
-  async flushOfflineData() {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      
-      for (const data of offlineData) {
-        await this.sendToBackend(data);
-      }
-      
-      // مسح البيانات بعد الإرسال الناجح
-      localStorage.removeItem('offline_analytics');
-      return { success: true, sent_count: offlineData.length };
-    } catch (error) {
-      console.error('Failed to flush offline data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // تنظيف البيانات القديمة
-  cleanupOldData() {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      const freshData = offlineData.filter(item => {
-        const itemDate = new Date(item.offline_saved_at || item.timestamp);
-        return itemDate > oneWeekAgo;
-      });
-      
-      localStorage.setItem('offline_analytics', JSON.stringify(freshData));
-      return { cleaned_count: offlineData.length - freshData.length };
-    } catch (error) {
-      console.error('Failed to cleanup old data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // الحصول على معلومات الجلسة
-  getSessionInfo() {
-    return {
-      session_id: this.sessionId,
-      session_start: sessionStorage.getItem('session_start_time'),
-      user_agent: navigator.userAgent
-    };
-  }
-
-  // الحصول على ID المستخدم
-  _getUserId() {
-    return localStorage.getItem('user_id') || 'anonymous';
-  }
-}
-
-export const analyticsService = new EnhancedAnalyticsService();
+// استيراد خدمة التحليلات الحالية بدلاً من تعريف جديدة
+import { analyticsService } from "../../services/analyticsService";
 
 // 🔧 دالة مساعدة للتتبع الآمن
-const safeTrack = (trackingFunction, ...args) => {
+const safeTrack = async (trackingFunction, ...args) => {
   try {
-    return trackingFunction(...args);
+    if (typeof trackingFunction !== 'function') {
+      console.warn('Tracking function is not a function:', trackingFunction);
+      return { success: false, error: 'Invalid tracking function' };
+    }
+    
+    const result = await trackingFunction(...args);
+    return result;
   } catch (error) {
     console.error('Tracking error:', error);
-    // لا ترمي خطأ حتى لا تؤثر على تجربة المستخدم
     return { success: false, error: error.message };
-  };
+  }
 };
 
 function SingleProduct() {
@@ -261,6 +61,38 @@ function SingleProduct() {
     reviews: 0
   });
   const [currentTabStartTime, setCurrentTabStartTime] = useState(null);
+
+  // استخدام useRef للقيم التي تتغير باستمرار لمنع تسرب الذاكرة
+  const interactionCountRef = useRef(0);
+  const imagesViewedRef = useRef(new Set());
+  const tabViewTimesRef = useRef({
+    description: 0,
+    specifications: 0,
+    reviews: 0
+  });
+  const currentTabStartTimeRef = useRef(null);
+  const pageViewStartTimeRef = useRef(null);
+
+  // تحديث الـ refs عندما تتغير الـ states
+  useEffect(() => {
+    interactionCountRef.current = interactionCount;
+  }, [interactionCount]);
+
+  useEffect(() => {
+    imagesViewedRef.current = imagesViewed;
+  }, [imagesViewed]);
+
+  useEffect(() => {
+    tabViewTimesRef.current = tabViewTimes;
+  }, [tabViewTimes]);
+
+  useEffect(() => {
+    currentTabStartTimeRef.current = currentTabStartTime;
+  }, [currentTabStartTime]);
+
+  useEffect(() => {
+    pageViewStartTimeRef.current = pageViewStartTime;
+  }, [pageViewStartTime]);
 
   // استخدام useMemo للتحسينات
   const product = useMemo(() => 
@@ -297,76 +129,62 @@ function SingleProduct() {
     { label: "Dimensions", value: "10 × 5 × 3 cm" },
   ], [product]);
 
-  // 🔍 تتبع مشاهدة صفحة المنتج
+  // 🔍 تتبع مشاهدة صفحة المنتج - باستخدام useRef لمنع التسرب
   useEffect(() => {
     if (product) {
       const startTime = Date.now();
       setPageViewStartTime(startTime);
       setCurrentTabStartTime(startTime);
+      pageViewStartTimeRef.current = startTime;
+      currentTabStartTimeRef.current = startTime;
+      
+      // تتبع الصورة الأولى
+      imagesViewedRef.current = new Set([0]);
       
       // 🔍 تتبع فتح صفحة المنتج
       safeTrack(analyticsService.trackProductView, product.id, product.category, product.title, {
         source: document.referrer,
-        entry_point: window.location.search || 'direct',
-        user_previous_interactions: interactionCount
-      });
-
-      // 🔍 تتبع بدء جلسة المشاهدة
-      safeTrack(analyticsService.trackUserAction, 'product_page_session_start', {
-        product_id: product.id,
-        product_title: product.title,
-        initial_tab: activeTab
+        entry_point: window.location.search || 'direct'
       });
 
       // تتبع وقت المشاهدة عند مغادرة الصفحة
       return () => {
-        if (startTime) {
-          const viewDuration = Date.now() - startTime;
-          
-          // تحديث وقت التبويب النشط الأخير
-          if (currentTabStartTime) {
-            const currentTabTime = Date.now() - currentTabStartTime;
-            setTabViewTimes(prev => ({
-              ...prev,
-              [activeTab]: prev[activeTab] + currentTabTime
-            }));
-          }
+        const viewDuration = Date.now() - startTime;
+        
+        // استخدام القيم من الـ refs
+        const finalImagesViewed = imagesViewedRef.current.size;
+        const finalTabTimes = { ...tabViewTimesRef.current };
+        const finalInteractions = interactionCountRef.current;
 
-          // 🔍 تتبع انتهاء جلسة المشاهدة
-          safeTrack(analyticsService.trackUserAction, 'product_page_session_end', {
-            product_id: product.id,
-            product_title: product.title,
-            total_duration_ms: viewDuration,
-            images_viewed_count: imagesViewed.size,
-            tabs_visited: Object.keys(tabViewTimes).filter(tab => tabViewTimes[tab] > 0),
-            total_interactions: interactionCount,
-            completed_view: viewDuration > 30000, // 30 ثانية
-            purchase_intent: isInCart ? 'high' : interactionCount > 5 ? 'medium' : 'low'
-          });
-
-          // 🔍 تتحليل زمن التبويبات
-          safeTrack(analyticsService.trackUserAction, 'product_tabs_analysis', {
-            product_id: product.id,
-            tab_times: tabViewTimes,
-            most_engaged_tab: Object.keys(tabViewTimes).reduce((a, b) => 
-              tabViewTimes[a] > tabViewTimes[b] ? a : b
-            ),
-            total_tab_time: Object.values(tabViewTimes).reduce((a, b) => a + b, 0)
-          });
+        // تحديث وقت التبويب النشط الأخير
+        if (currentTabStartTimeRef.current) {
+          const currentTabTime = Date.now() - currentTabStartTimeRef.current;
+          finalTabTimes[activeTab] = (finalTabTimes[activeTab] || 0) + currentTabTime;
         }
+
+        // 🔍 تتبع انتهاء جلسة المشاهدة
+        safeTrack(analyticsService.trackUserAction, 'product_page_session_end', {
+          product_id: product.id,
+          product_title: product.title,
+          total_duration_ms: viewDuration,
+          images_viewed_count: finalImagesViewed,
+          tabs_visited: Object.keys(finalTabTimes).filter(tab => finalTabTimes[tab] > 0),
+          total_interactions: finalInteractions,
+          completed_view: viewDuration > 30000
+        });
       };
     }
-  }, [product, activeTab, imagesViewed.size, interactionCount, tabViewTimes, currentTabStartTime, isInCart]);
+  }, [product, activeTab]); // ✅ تبعيات محدودة فقط
 
-  // 🔍 تتبع تغيير التبويبات
+  // 🔍 تتبع تغيير التبويبات - مصحح
   useEffect(() => {
     if (currentTabStartTime && product) {
       const tabTimeSpent = Date.now() - currentTabStartTime;
       
-      // تحديث وقت التبويب السابق
+      // تحديث وقت التبويب السابق باستخدام الدالة الوظيفية
       setTabViewTimes(prev => ({
         ...prev,
-        [activeTab]: prev[activeTab] + tabTimeSpent
+        [activeTab]: (prev[activeTab] || 0) + tabTimeSpent
       }));
 
       // 🔍 تتبع تغيير التبويب
@@ -380,15 +198,18 @@ function SingleProduct() {
       // بدء توقيت التبويب الجديد
       setCurrentTabStartTime(Date.now());
     }
-  }, [activeTab]);
+  }, [activeTab, product]); // ✅ إزالة التبعيات الزائدة
 
-  // 🔍 تتبع تغيير الصور
+  // 🔍 تتبع تغيير الصور - مصحح
   const handleImageChange = useCallback((index) => {
     setSelectedImage(index);
     
     if (product && !imagesViewed.has(index)) {
       const newImagesViewed = new Set([...imagesViewed, index]);
       setImagesViewed(newImagesViewed);
+      
+      // تحديث الـ ref أيضاً
+      imagesViewedRef.current = newImagesViewed;
       
       // 🔍 تتبع مشاهدة الصورة
       safeTrack(analyticsService.trackUserAction, 'product_image_view', {
@@ -409,7 +230,11 @@ function SingleProduct() {
       interaction_type: 'image_gallery_navigation'
     });
 
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [product, imagesViewed, selectedImage]);
 
   // تأثيرات محسنة
@@ -448,7 +273,11 @@ function SingleProduct() {
       });
     }
 
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [product, activeTab, interactionCount]);
 
   // معالجات محسنة
@@ -493,7 +322,11 @@ function SingleProduct() {
     
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [product, quantity, addItem, updateItemQuantity, items, selectedImage, pageViewStartTime, interactionCount, imagesViewed.size, tabViewTimes]);
 
   const handleBuyNow = useCallback(() => {
@@ -537,7 +370,11 @@ function SingleProduct() {
       });
     }
 
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [isInWishlist, product, pageViewStartTime, selectedImage, activeTab]);
 
   // 🔍 تتبع مشاركة المنتج
@@ -590,7 +427,11 @@ function SingleProduct() {
       });
     }
 
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [product, pageViewStartTime, interactionCount, imagesViewed.size]);
 
   // 🔍 تتبع النقر على المنتجات ذات الصلة
@@ -610,7 +451,11 @@ function SingleProduct() {
       navigation_reason: 'related_products_section'
     });
 
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [product, pageViewStartTime, imagesViewed.size, interactionCount, isInCart]);
 
   // 🔍 تتبع العودة إلى القائمة
@@ -685,7 +530,11 @@ function SingleProduct() {
       }
     }
 
-    setInteractionCount(prev => prev + 1);
+    setInteractionCount(prev => {
+      const newCount = prev + 1;
+      interactionCountRef.current = newCount;
+      return newCount;
+    });
   }, [product, quantity, activeTab, selectedImage, interactionCount]);
 
   // حالة التحميل

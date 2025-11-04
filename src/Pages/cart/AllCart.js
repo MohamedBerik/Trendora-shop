@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useCart } from "react-use-cart";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FaTrash, 
-  FaPlus, 
-  FaMinus, 
-  FaShoppingBag, 
-  FaArrowRight, 
+import {
+  FaTrash,
+  FaPlus,
+  FaMinus,
+  FaShoppingBag,
+  FaArrowRight,
   FaArrowLeft,
   FaShoppingCart,
   FaTruck,
@@ -19,208 +19,37 @@ import {
   FaClock
 } from "react-icons/fa";
 
-// 🔍 خدمة الإحصائيات المحسنة
-class EnhancedAnalyticsService {
-  constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-    this.sessionId = this.generateSessionId();
-  }
-
-  generateSessionId() {
-    let sessionId = sessionStorage.getItem('analytics_session_id');
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.setItem('analytics_session_id', sessionId);
-    }
-    return sessionId;
-  }
-
-  async trackEvent(eventName, metadata = {}) {
-    const data = {
-      type: 'user_action',
-      event_name: eventName,
-      session_id: this.sessionId,
-      timestamp: new Date().toISOString(),
-      user_agent: navigator.userAgent,
-      url: window.location.href,
-      path: window.location.pathname,
-      ...metadata
-    };
-    return this.sendToBackend(data);
-  }
-
-  // دعم التوافق مع useAnalytics
-  trackUserAction = this.trackEvent;
-  
-  async trackPageView(pageName, additionalData = {}) {
-    return this.trackEvent('page_view', {
-      page_name: pageName,
-      ...additionalData
-    });
-  }
-
-  async trackError(errorType, message, component = '', metadata = {}) {
-    return this.trackEvent('error_occurred', {
-      error_type: errorType,
-      error_message: message,
-      component,
-      ...metadata
-    });
-  }
-
-  // دوال متخصصة للسلة
-  async trackCartAction(action, productId = null, quantity = 1, price = 0, title = '', metadata = {}) {
-    return this.trackEvent('cart_action', {
-      action,
-      product_id: productId,
-      quantity,
-      price,
-      product_title: title,
-      ...metadata
-    });
-  }
-
-  async trackCartView(cartItemsCount, totalAmount, uniqueItemsCount, metadata = {}) {
-    return this.trackEvent('cart_view', {
-      cart_items_count: cartItemsCount,
-      total_amount: totalAmount,
-      unique_items_count: uniqueItemsCount,
-      ...metadata
-    });
-  }
-
-  async trackCheckoutIntent(totalAmount, itemsCount, metadata = {}) {
-    return this.trackEvent('checkout_intent', {
-      total_amount: totalAmount,
-      items_count: itemsCount,
-      ...metadata
-    });
-  }
-
-  async trackCartEmptied(itemsCount, totalAmount, metadata = {}) {
-    return this.trackEvent('cart_emptied', {
-      items_count: itemsCount,
-      total_amount: totalAmount,
-      ...metadata
-    });
-  }
-
-  async sendToBackend(data) {
-    try {
-      const response = await fetch(`${this.baseURL}/analytics`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Analytics error:', error);
-      this.saveOffline(data);
-      return { success: false, offline: true };
-    }
-  }
-
-  saveOffline(data) {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      offlineData.push({
-        ...data, 
-        offline: true,
-        offline_saved_at: new Date().toISOString()
-      });
-      
-      // حفظ فقط آخر 100 حدث لتجنب امتلاء التخزين
-      const trimmedData = offlineData.slice(-100);
-      localStorage.setItem('offline_analytics', JSON.stringify(trimmedData));
-    } catch (error) {
-      console.error('Failed to save offline analytics:', error);
-    }
-  }
-
-  // دالة لمحاولة إرسال البيانات المخزنة
-  async flushOfflineData() {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      
-      for (const data of offlineData) {
-        await this.sendToBackend(data);
-      }
-      
-      // مسح البيانات بعد الإرسال الناجح
-      localStorage.removeItem('offline_analytics');
-      return { success: true, sent_count: offlineData.length };
-    } catch (error) {
-      console.error('Failed to flush offline data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // تنظيف البيانات القديمة
-  cleanupOldData() {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem('offline_analytics') || '[]');
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      const freshData = offlineData.filter(item => {
-        const itemDate = new Date(item.offline_saved_at || item.timestamp);
-        return itemDate > oneWeekAgo;
-      });
-      
-      localStorage.setItem('offline_analytics', JSON.stringify(freshData));
-      return { cleaned_count: offlineData.length - freshData.length };
-    } catch (error) {
-      console.error('Failed to cleanup old data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // الحصول على معلومات الجلسة
-  getSessionInfo() {
-    return {
-      session_id: this.sessionId,
-      session_start: sessionStorage.getItem('session_start_time'),
-      user_agent: navigator.userAgent
-    };
-  }
-
-  // الحصول على ID المستخدم
-  _getUserId() {
-    return localStorage.getItem('user_id') || 'anonymous';
-  }
-}
-
-export const analyticsService = new EnhancedAnalyticsService();
+// ✅ استيراد خدمة التحليلات الحالية
+import { analyticsService } from "../../services/analyticsService";
 
 // 🔧 دالة مساعدة للتتبع الآمن
-const safeTrack = (trackingFunction, ...args) => {
+const safeTrack = async (trackingFunction, ...args) => {
   try {
-    return trackingFunction(...args);
+    if (typeof trackingFunction !== 'function') {
+      console.warn('Tracking function is not a function:', trackingFunction);
+      return { success: false, error: 'Invalid tracking function' };
+    }
+   
+    const result = await trackingFunction(...args);
+    return result;
   } catch (error) {
     console.error('Tracking error:', error);
     return { success: false, error: error.message };
   }
 };
 
-function Cart() {
-  const { 
-    items, 
-    updateItemQuantity, 
-    removeItem, 
-    isEmpty, 
-    totalItems, 
-    cartTotal, 
-    totalUniqueItems, 
-    emptyCart 
+function AllCart() {
+  const {
+    items,
+    updateItemQuantity,
+    removeItem,
+    isEmpty,
+    totalItems,
+    cartTotal,
+    totalUniqueItems,
+    emptyCart
   } = useCart();
-  
+ 
   const navigate = useNavigate();
   const [removingItem, setRemovingItem] = useState(null);
   const [showEmptyCartConfirm, setShowEmptyCartConfirm] = useState(false);
@@ -246,7 +75,7 @@ function Cart() {
       });
 
       // 🔍 تتبع تحليل محتويات السلة
-      safeTrack(analyticsService.trackEvent, 'cart_content_analysis', {
+      safeTrack(analyticsService.trackUserAction, 'cart_content_analysis', {
         total_items: totalItems,
         unique_items: totalUniqueItems,
         total_value: cartTotal,
@@ -263,7 +92,7 @@ function Cart() {
     return () => {
       if (startTime) {
         const viewDuration = Date.now() - startTime;
-        safeTrack(analyticsService.trackEvent, 'cart_page_session_end', {
+        safeTrack(analyticsService.trackUserAction, 'cart_page_session_end', {
           total_duration_ms: viewDuration,
           final_cart_state: {
             items_count: totalItems,
@@ -281,9 +110,9 @@ function Cart() {
   // Handle item removal with animation and analytics
   const handleRemoveItem = (item) => {
     setRemovingItem(item.id);
-    
+   
     // 🔍 تتبع إزالة المنتج من السلة
-    safeTrack(analyticsService.trackCartAction, 'remove_item', item.id, item.quantity, item.title, {
+    safeTrack(analyticsService.trackRemoveFromCart, item.id, item.title, item.price, item.quantity, {
       item_total_value: item.price * item.quantity,
       removal_reason: 'user_action',
       position_in_cart: items.findIndex(i => i.id === item.id),
@@ -294,7 +123,7 @@ function Cart() {
     });
 
     // 🔍 تتبع الحدث التفصيلي
-    safeTrack(analyticsService.trackEvent, 'cart_item_removed', {
+    safeTrack(analyticsService.trackUserAction, 'cart_item_removed', {
       product_id: item.id,
       product_title: item.title,
       quantity_removed: item.quantity,
@@ -305,7 +134,7 @@ function Cart() {
         cart_modifications: cartModifications + 1
       }
     });
-    
+   
     setTimeout(() => {
       removeItem(item.id);
       setRemovingItem(null);
@@ -314,20 +143,13 @@ function Cart() {
     }, 300);
   };
 
-// Handle quantity update with analytics
-const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
-  const oldQuantity = items.find(item => item.id === itemId)?.quantity || 0;
-  const quantityChange = newQuantity - oldQuantity;
-  
-  // 🔍 تتبع تغيير الكمية
-  safeTrack(analyticsService.trackCartAction, 
-    action, 
-    itemId, 
-    Math.abs(quantityChange), 
-    item.title, 
-    {
-      old_quantity: oldQuantity,
-      new_quantity: newQuantity,  // ✅ تصحيح: newQuantity بدلاً من new_quantity
+  // Handle quantity update with analytics
+  const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
+    const oldQuantity = items.find(item => item.id === itemId)?.quantity || 0;
+    const quantityChange = newQuantity - oldQuantity;
+   
+    // 🔍 تتبع تغيير الكمية
+    safeTrack(analyticsService.trackUpdateCartQuantity, itemId, oldQuantity, newQuantity, item.price, item.title, {
       change_direction: quantityChange > 0 ? 'increase' : 'decrease',
       value_change: item.price * quantityChange,
       item_new_total: item.price * newQuantity,
@@ -335,29 +157,28 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
         new_item_count: totalItems + quantityChange,
         new_cart_total: cartTotal + (item.price * quantityChange)
       }
-    }
-  );
+    });
 
-  // 🔍 تتبع حدث تعديل الكمية التفصيلي
-  safeTrack(analyticsService.trackEvent, 'cart_quantity_modified', {
-    product_id: itemId,
-    product_title: item.title,
-    modification_type: action,
-    quantity_change: Math.abs(quantityChange),
-    oldQuantity,  // ✅ استخدام oldQuantity مباشرة
-    newQuantity,  // ✅ استخدام newQuantity مباشرة
-    price_impact: item.price * quantityChange,
-    modification_context: {
-      time_on_page: Date.now() - (pageViewStartTime || Date.now()),
-      interaction_sequence: interactionCount + 1,
-      free_shipping_progress: freeShippingProgress
-    }
-  });
-  
-  updateItemQuantity(itemId, newQuantity);
-  setInteractionCount(prev => prev + 1);
-  setCartModifications(prev => prev + 1);
-};
+    // 🔍 تتبع حدث تعديل الكمية التفصيلي
+    safeTrack(analyticsService.trackUserAction, 'cart_quantity_modified', {
+      product_id: itemId,
+      product_title: item.title,
+      modification_type: action,
+      quantity_change: Math.abs(quantityChange),
+      old_quantity: oldQuantity,
+      new_quantity: newQuantity,
+      price_impact: item.price * quantityChange,
+      modification_context: {
+        time_on_page: Date.now() - (pageViewStartTime || Date.now()),
+        interaction_sequence: interactionCount + 1,
+        free_shipping_progress: freeShippingProgress
+      }
+    });
+   
+    updateItemQuantity(itemId, newQuantity);
+    setInteractionCount(prev => prev + 1);
+    setCartModifications(prev => prev + 1);
+  };
 
   // Handle empty cart with confirmation and analytics
   const handleEmptyCart = () => {
@@ -381,7 +202,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
       });
 
       // 🔍 تتبع حدث تفريغ السلة التفصيلي
-      safeTrack(analyticsService.trackEvent, 'cart_emptied_detailed', {
+      safeTrack(analyticsService.trackUserAction, 'cart_emptied_detailed', {
         items_removed: totalItems,
         total_value_lost: cartTotal,
         items_breakdown: items.map(item => ({
@@ -397,16 +218,16 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
           abandonment_reason: 'manual_empty'
         }
       });
-      
+     
       emptyCart();
       setShowEmptyCartConfirm(false);
       setInteractionCount(prev => prev + 1);
     } else {
       setShowEmptyCartConfirm(true);
       setTimeout(() => setShowEmptyCartConfirm(false), 3000);
-      
+     
       // 🔍 تتبع محاولة تفريغ السلة
-      safeTrack(analyticsService.trackEvent, 'cart_empty_attempt', {
+      safeTrack(analyticsService.trackUserAction, 'cart_empty_attempt', {
         confirmation_required: true,
         cart_state: {
           items_count: totalItems,
@@ -419,7 +240,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
   // Continue shopping handler
   const continueShopping = () => {
     // 🔍 تتبع متابعة التسوق
-    safeTrack(analyticsService.trackEvent, 'continue_shopping_click', {
+    safeTrack(analyticsService.trackUserAction, 'continue_shopping_click', {
       from_page: 'cart',
       cart_state_at_exit: {
         items_count: totalItems,
@@ -432,14 +253,14 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
         modifications: cartModifications
       }
     });
-    
+   
     navigate("/products");
   };
 
   // Proceed to checkout with analytics
   const proceedToCheckout = () => {
     // 🔍 تتبع نية الدفع
-    safeTrack(analyticsService.trackCheckoutIntent, finalTotal, totalItems, {
+    safeTrack(analyticsService.trackCheckoutStarted, finalTotal, totalItems, items, {
       checkout_readiness: {
         has_free_shipping: shippingCost === 0,
         cart_value_tier: cartTotal > 200 ? 'premium' : cartTotal > 100 ? 'standard' : 'basic',
@@ -449,17 +270,11 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
         time_on_cart: Date.now() - (pageViewStartTime || Date.now()),
         interactions_before_checkout: interactionCount,
         cart_modifications: cartModifications
-      },
-      cart_composition: items.map(item => ({
-        product_id: item.id,
-        category: item.category,
-        quantity: item.quantity,
-        value: item.price * item.quantity
-      }))
+      }
     });
 
     // 🔍 تتبع حدث الدفع التفصيلي
-    safeTrack(analyticsService.trackEvent, 'checkout_proceed_detailed', {
+    safeTrack(analyticsService.trackUserAction, 'checkout_proceed_detailed', {
       cart_summary: {
         total_items: totalItems,
         unique_items: totalUniqueItems,
@@ -478,16 +293,18 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
       user_journey: {
         cart_session_duration: Date.now() - (pageViewStartTime || Date.now()),
         total_interactions: interactionCount,
-        modification_intensity: cartModifications / (Date.now() - (pageViewStartTime || Date.now())) * 1000 // modifications per second
+        modification_intensity: cartModifications / (Date.now() - (pageViewStartTime || Date.now())) * 1000
       }
     });
-    
+   
     navigate("/checkout");
   };
 
   // 🔍 تتبع النقر على المنتج من السلة
   const handleProductClick = (item) => {
-    safeTrack(analyticsService.trackCartAction, 'product_click', item.id, item.quantity, item.title, {
+    safeTrack(analyticsService.trackUserAction, 'cart_product_click', {
+      product_id: item.id,
+      product_title: item.title,
       navigation_context: {
         from_page: 'cart',
         item_position: items.findIndex(i => i.id === item.id),
@@ -501,7 +318,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
     });
 
     // 🔍 تتبع حدث النقر التفصيلي
-    safeTrack(analyticsService.trackEvent, 'cart_product_click_detailed', {
+    safeTrack(analyticsService.trackUserAction, 'cart_product_click_detailed', {
       product_id: item.id,
       product_title: item.title,
       click_context: {
@@ -518,19 +335,6 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
     });
 
     setInteractionCount(prev => prev + 1);
-  };
-
-  // 🔍 تتبع مشاهدة توصيات المنتجات
-  const handleRecommendationView = (recommendationType) => {
-    safeTrack(analyticsService.trackEvent, 'cart_recommendation_view', {
-      recommendation_type: recommendationType,
-      cart_context: {
-        current_items: totalItems,
-        current_total: cartTotal,
-        needs_free_shipping: cartTotal < 50
-      },
-      view_timing: Date.now() - (pageViewStartTime || Date.now())
-    });
   };
 
   if (isEmpty) {
@@ -553,7 +357,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
             <p className="text-muted mb-4">
               Looks like you haven't added any items to your cart yet.
             </p>
-            
+           
             {/* Session Analytics Badge */}
             <div className="d-flex justify-content-center gap-2 mb-4">
               <span className="badge bg-info">
@@ -565,7 +369,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
               </span>
             </div>
           </motion.div>
-          
+         
           <div className="d-flex justify-content-center gap-3 flex-wrap">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -581,35 +385,6 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
               Back to Home
             </Link>
           </div>
-
-          {/* Popular Categories Suggestions */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mt-5"
-          >
-            <h5 className="mb-4">Popular Categories</h5>
-            <div className="row g-3 justify-content-center">
-              {[
-                { name: "Electronics", icon: "📱", link: "/products?category=electronics" },
-                { name: "Fashion", icon: "👕", link: "/products?category=fashion" },
-                { name: "Home & Garden", icon: "🏠", link: "/products?category=home" },
-                { name: "Sports", icon: "⚽", link: "/products?category=sports" }
-              ].map((category, index) => (
-                <div key={index} className="col-auto">
-                  <Link 
-                    to={category.link}
-                    className="btn btn-outline-primary d-flex align-items-center gap-2"
-                    onClick={() => handleRecommendationView('category_suggestion')}
-                  >
-                    <span>{category.icon}</span>
-                    {category.name}
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </motion.div>
         </motion.div>
       </div>
     );
@@ -633,7 +408,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
               <p className="text-muted mb-0">
                 {totalUniqueItems} unique item{totalUniqueItems !== 1 ? 's' : ''} • {totalItems} total item{totalItems !== 1 ? 's' : ''}
               </p>
-              
+             
               {/* Analytics Badges */}
               <div className="d-flex gap-2 mt-2">
                 <span className="badge bg-info">
@@ -648,7 +423,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                 </span>
               </div>
             </div>
-            
+           
             <div className="d-flex gap-2">
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -659,7 +434,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                 <FaTrash className="me-2" />
                 {showEmptyCartConfirm ? 'Click Again to Confirm' : 'Empty Cart'}
               </motion.button>
-              
+             
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -690,7 +465,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                 </div>
               </div>
             </div>
-            
+           
             <div className="card-body p-0">
               <AnimatePresence>
                 {items.map((item, index) => (
@@ -698,10 +473,10 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                     key={item.id}
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ 
-                      opacity: removingItem === item.id ? 0 : 1, 
+                    animate={{
+                      opacity: removingItem === item.id ? 0 : 1,
                       scale: removingItem === item.id ? 0.8 : 1,
-                      x: removingItem === item.id ? 100 : 0 
+                      x: removingItem === item.id ? 100 : 0
                     }}
                     exit={{ opacity: 0, scale: 0.8, x: -100 }}
                     transition={{ duration: 0.3 }}
@@ -711,7 +486,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                     <div className="row align-items-center">
                       {/* Product Image */}
                       <div className="col-md-2 col-4">
-                        <Link 
+                        <Link
                           to={`/singleproduct/${item.id}`}
                           onClick={() => handleProductClick(item)}
                         >
@@ -720,8 +495,8 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                             src={item.images?.[0] || "/assets/img/placeholder.jpg"}
                             alt={item.title}
                             className="img-fluid rounded-3"
-                            style={{ 
-                              height: '100px', 
+                            style={{
+                              height: '100px',
                               objectFit: 'cover',
                               width: '100%'
                             }}
@@ -731,7 +506,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
 
                       {/* Product Details */}
                       <div className="col-md-4 col-8">
-                        <Link 
+                        <Link
                           to={`/singleproduct/${item.id}`}
                           className="text-decoration-none"
                           onClick={() => handleProductClick(item)}
@@ -740,15 +515,15 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                             {item.title}
                           </h6>
                         </Link>
-                        
+                       
                         <div className="d-flex align-items-center mb-2">
                           <div className="d-flex align-items-center me-3">
                             {[...Array(5)].map((_, i) => (
                               <FaStar
                                 key={i}
                                 className={`${
-                                  i < Math.floor(item.rating || 0) 
-                                    ? "text-warning" 
+                                  i < Math.floor(item.rating || 0)
+                                    ? "text-warning"
                                     : "text-muted"
                                 } me-1`}
                                 size={12}
@@ -757,7 +532,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                           </div>
                           <small className="text-muted">({item.rating || "N/A"})</small>
                         </div>
-                        
+                       
                         <div className="mb-2">
                           <span className="badge bg-light text-dark">{item.category}</span>
                           {item.discountPercentage > 0 && (
@@ -785,36 +560,36 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                             className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                             style={{ width: '35px', height: '35px' }}
                             onClick={() => handleQuantityUpdate(
-                              item.id, 
-                              item.quantity - 1, 
-                              'decrease_quantity', 
+                              item.id,
+                              item.quantity - 1,
+                              'decrease_quantity',
                               item
                             )}
                             disabled={item.quantity <= 1}
                           >
                             <FaMinus size={12} />
                           </motion.button>
-                          
+                         
                           <span className="fw-bold mx-3" style={{ minWidth: '30px', textAlign: 'center' }}>
                             {item.quantity}
                           </span>
-                          
+                         
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                             style={{ width: '35px', height: '35px' }}
                             onClick={() => handleQuantityUpdate(
-                              item.id, 
-                              item.quantity + 1, 
-                              'increase_quantity', 
+                              item.id,
+                              item.quantity + 1,
+                              'increase_quantity',
                               item
                             )}
                           >
                             <FaPlus size={12} />
                           </motion.button>
                         </div>
-                        
+                       
                         {/* Quantity Analytics */}
                         <div className="small text-muted text-center mt-1">
                           Position: {index + 1} of {items.length}
@@ -831,7 +606,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                             ${item.price} each
                           </div>
                         </div>
-                        
+                       
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
@@ -884,7 +659,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
             <div className="card-header bg-white border-0 py-3">
               <h5 className="mb-0 fw-semibold">Order Summary</h5>
             </div>
-            
+           
             <div className="card-body">
               {/* Summary Items */}
               <div className="space-y-3 mb-4">
@@ -892,20 +667,20 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                   <span className="text-muted">Subtotal ({totalItems} items):</span>
                   <span className="fw-semibold">${cartTotal.toFixed(2)}</span>
                 </div>
-                
+               
                 <div className="d-flex justify-content-between">
                   <span className="text-muted">Shipping:</span>
                   <span className={shippingCost === 0 ? "text-success fw-semibold" : "fw-semibold"}>
                     {shippingCost === 0 ? "FREE" : `$${shippingCost.toFixed(2)}`}
                   </span>
                 </div>
-                
+               
                 {shippingCost > 0 && (
                   <div className="small text-muted">
                     Add ${(50 - cartTotal).toFixed(2)} more for free shipping!
                   </div>
                 )}
-                
+               
                 <div className="d-flex justify-content-between border-top pt-3">
                   <span className="fw-bold fs-5">Total:</span>
                   <span className="fw-bold fs-5 text-primary">${finalTotal.toFixed(2)}</span>
@@ -920,8 +695,8 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                     <span>${cartTotal.toFixed(2)} of $50</span>
                   </div>
                   <div className="progress" style={{ height: '6px' }}>
-                    <div 
-                      className="progress-bar bg-success" 
+                    <div
+                      className="progress-bar bg-success"
                       style={{ width: `${freeShippingProgress}%` }}
                     ></div>
                   </div>
@@ -962,7 +737,7 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
                   Proceed to Checkout
                   <FaArrowRight className="ms-2" />
                 </motion.button>
-                
+               
                 <Link to="/products" className="btn btn-outline-secondary">
                   Continue Shopping
                 </Link>
@@ -979,59 +754,20 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
         </div>
       </div>
 
-      {/* Recently Viewed Suggestions */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="row mt-5"
-      >
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h5 className="fw-semibold mb-0">You Might Also Like</h5>
-            <small className="text-muted">
-              Based on your cart • {totalItems} items
-            </small>
-          </div>
-          <div className="row g-3">
-            {/* This would typically come from your recently viewed or recommended products */}
-            {[
-              { type: "Popular Items", icon: "🔥", desc: "Trending now" },
-              { type: "Best Sellers", icon: "🎯", desc: "Customer favorites" },
-              { type: "Flash Sale", icon: "⚡", desc: "Limited time offers" },
-              { type: "New Arrivals", icon: "🆕", desc: "Just added" }
-            ].map((rec, index) => (
-              <div key={index} className="col-md-3 col-6">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  className="card border-0 shadow-sm text-center p-3 cursor-pointer"
-                  onClick={() => handleRecommendationView(rec.type.toLowerCase().replace(' ', '_'))}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="fs-2 mb-2">{rec.icon}</div>
-                  <small className="fw-semibold d-block">{rec.type}</small>
-                  <small className="text-muted">{rec.desc}</small>
-                </motion.div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
       <style>{`
         .sticky-top {
           position: sticky;
           z-index: 10;
         }
-        
+       
         .card {
           transition: all 0.3s ease;
         }
-        
+       
         .card:hover {
           box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
         }
-        
+       
         .cursor-pointer {
           cursor: pointer;
         }
@@ -1040,4 +776,4 @@ const handleQuantityUpdate = (itemId, newQuantity, action, item) => {
   );
 }
 
-export default Cart;
+export default AllCart;

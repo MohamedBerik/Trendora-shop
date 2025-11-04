@@ -27,7 +27,7 @@ import "swiper/css/effect-cards";
 import "swiper/css/effect-creative";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics } from "../hooks/hooks-exports";
+import { useAnalytics } from "../../hooks/hooks-exports";
 
 function Testimonials({ onSectionView }) {
   const [darkMode, setDarkMode] = useState(false);

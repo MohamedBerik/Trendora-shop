@@ -17,11 +17,32 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/Page.css";
 
-// 🔍 خدمة الإحصائيات المحسنة
+// 🔍 خدمة الإحصائيات المحسنة - مصححة
 class EnhancedAnalyticsService {
   constructor() {
     this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
     this.sessionId = this.generateSessionId();
+    
+    // ربط الدوال بـ this بشكل صحيح
+    this.trackEvent = this.trackEvent.bind(this);
+    this.trackPageView = this.trackPageView.bind(this);
+    this.trackError = this.trackError.bind(this);
+    this.trackProductView = this.trackProductView.bind(this);
+    this.trackAddToCart = this.trackAddToCart.bind(this);
+    this.trackSearch = this.trackSearch.bind(this);
+    this.trackCategoryView = this.trackCategoryView.bind(this);
+    this.trackFilterApplied = this.trackFilterApplied.bind(this);
+    this.trackSortApplied = this.trackSortApplied.bind(this);
+    this.trackProductInteraction = this.trackProductInteraction.bind(this);
+    this.sendToBackend = this.sendToBackend.bind(this);
+    this.saveOffline = this.saveOffline.bind(this);
+    this.flushOfflineData = this.flushOfflineData.bind(this);
+    this.cleanupOldData = this.cleanupOldData.bind(this);
+    this.getSessionInfo = this.getSessionInfo.bind(this);
+    this._getUserId = this._getUserId.bind(this);
+    
+    // دعم التوافق مع useAnalytics
+    this.trackUserAction = this.trackEvent.bind(this);
   }
 
   generateSessionId() {
@@ -34,21 +55,23 @@ class EnhancedAnalyticsService {
   }
 
   async trackEvent(eventName, metadata = {}) {
-    const data = {
-      type: 'user_action',
-      event_name: eventName,
-      session_id: this.sessionId,
-      timestamp: new Date().toISOString(),
-      user_agent: navigator.userAgent,
-      url: window.location.href,
-      path: window.location.pathname,
-      ...metadata
-    };
-    return this.sendToBackend(data);
+    try {
+      const data = {
+        type: 'user_action',
+        event_name: eventName,
+        session_id: this.sessionId,
+        timestamp: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        url: window.location.href,
+        path: window.location.pathname,
+        ...metadata
+      };
+      return await this.sendToBackend(data);
+    } catch (error) {
+      console.error('Track event error:', error);
+      return { success: false, error: error.message };
+    }
   }
-
-  // دعم التوافق مع useAnalytics
-  trackUserAction = this.trackEvent;
   
   async trackPageView(pageName, additionalData = {}) {
     return this.trackEvent('page_view', {
@@ -222,7 +245,8 @@ class EnhancedAnalyticsService {
   }
 }
 
-export const analyticsService = new EnhancedAnalyticsService();
+// إنشاء نسخة واحدة من الخدمة
+const analyticsService = new EnhancedAnalyticsService();
 
 // 🔧 دالة مساعدة للتتبع الآمن
 const safeTrack = (trackingFunction, ...args) => {
@@ -271,79 +295,7 @@ function AllProductsPage() {
 
   const [priceRange, setPriceRange] = useState([0, priceStats.max]);
 
-  // Get search parameters from URL
-  useEffect(() => {
-    const searchParam = searchParams.get('search');
-    const categoryParam = searchParams.get('category');
-    
-    if (searchParam) setSearch(searchParam);
-    if (categoryParam) setSelectedCategory(categoryParam);
-  }, [searchParams]);
-
-  // 🔍 تتبع مشاهدة الفئة عند التغيير
-  useEffect(() => {
-    if (selectedCategory && selectedCategory !== "All") {
-      safeTrack(analyticsService.trackCategoryView, selectedCategory, {
-        source: 'filter_selection',
-        previous_category: searchParams.get('category') || 'All'
-      });
-    }
-  }, [selectedCategory, searchParams]);
-
-  // 🔍 تتبع تطبيق الفلاتر
-  useEffect(() => {
-    if (selectedCategory !== "All") {
-      safeTrack(analyticsService.trackFilterApplied, 'category', selectedCategory, filteredData.length, {
-        applied_via: 'category_sidebar'
-      });
-    }
-  }, [selectedCategory, filteredData.length]);
-
-  // 🔍 تتبع تطبيق نطاق السعر
-  useEffect(() => {
-    if (priceRange[1] < priceStats.max) {
-      safeTrack(analyticsService.trackFilterApplied, 'price_range', `up_to_${priceRange[1]}`, filteredData.length, {
-        price_min: priceRange[0],
-        price_max: priceRange[1]
-      });
-    }
-  }, [priceRange, filteredData.length, priceStats.max]);
-
-  // 🔍 تتبع الترتيب
-  useEffect(() => {
-    if (sortBy !== "featured") {
-      safeTrack(analyticsService.trackSortApplied, sortBy, filteredData.length, {
-        previous_sort: 'featured'
-      });
-    }
-  }, [sortBy, filteredData.length]);
-
-  // 🔍 تتبع وقت مشاهدة الصفحة
-  useEffect(() => {
-    const pageLoadTime = performance.now();
-    
-    safeTrack(analyticsService.trackEvent, 'products_page_loaded', {
-      load_time: Math.round(pageLoadTime),
-      total_products: data.length,
-      initial_view_count: Math.min(visibleProducts, filteredData.length),
-      has_search_query: !!search,
-      active_category: selectedCategory
-    });
-
-    // تتبع وقت الجلسة في الصفحة
-    return () => {
-      const timeSpent = Math.round(performance.now() - pageLoadTime);
-      safeTrack(analyticsService.trackEvent, 'products_page_unloaded', {
-        time_spent_ms: timeSpent,
-        products_viewed: displayedProducts.length,
-        interactions_count: interactionCount,
-        search_queries_performed: search ? 1 : 0,
-        filters_applied: (selectedCategory !== "All" ? 1 : 0) + (priceRange[1] < priceStats.max ? 1 : 0)
-      });
-    };
-  }, []);
-
-  // Filter and sort products
+  // 🔥 تعريف filteredData أولاً قبل أي استخدام
   const filteredData = useMemo(() => {
     let filtered = data.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -383,6 +335,73 @@ function AllProductsPage() {
   const displayedProducts = useMemo(() => {
     return filteredData.slice(0, visibleProducts);
   }, [filteredData, visibleProducts]);
+
+  // Get search parameters from URL
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    const categoryParam = searchParams.get('category');
+    
+    if (searchParam) setSearch(searchParam);
+    if (categoryParam) setSelectedCategory(categoryParam);
+  }, [searchParams]);
+
+  // 🔥 الآن يمكننا استخدام filteredData بأمان في useEffect
+  // 🔍 تتبع مشاهدة الفئة عند التغيير
+  useEffect(() => {
+    if (selectedCategory && selectedCategory !== "All") {
+      safeTrack(analyticsService.trackCategoryView, selectedCategory, {
+        source: 'filter_selection',
+        previous_category: searchParams.get('category') || 'All'
+      });
+    }
+  }, [selectedCategory, searchParams]);
+
+  // 🔍 تتبع تطبيق الفلاتر
+  useEffect(() => {
+    if (selectedCategory !== "All") {
+      safeTrack(analyticsService.trackFilterApplied, 'category', selectedCategory, filteredData.length, {
+        applied_via: 'category_sidebar'
+      });
+    }
+    
+    if (priceRange[1] < priceStats.max) {
+      safeTrack(analyticsService.trackFilterApplied, 'price_range', `up_to_${priceRange[1]}`, filteredData.length, {
+        price_min: priceRange[0],
+        price_max: priceRange[1]
+      });
+    }
+    
+    if (sortBy !== "featured") {
+      safeTrack(analyticsService.trackSortApplied, sortBy, filteredData.length, {
+        previous_sort: 'featured'
+      });
+    }
+  }, [selectedCategory, priceRange, sortBy, filteredData.length, priceStats.max]);
+
+  // 🔍 تتبع وقت مشاهدة الصفحة
+  useEffect(() => {
+    const pageLoadTime = performance.now();
+    
+    safeTrack(analyticsService.trackEvent, 'products_page_loaded', {
+      load_time: Math.round(pageLoadTime),
+      total_products: data.length,
+      initial_view_count: Math.min(visibleProducts, filteredData.length),
+      has_search_query: !!search,
+      active_category: selectedCategory
+    });
+
+    // تتبع وقت الجلسة في الصفحة
+    return () => {
+      const timeSpent = Math.round(performance.now() - pageLoadTime);
+      safeTrack(analyticsService.trackEvent, 'products_page_unloaded', {
+        time_spent_ms: timeSpent,
+        products_viewed: displayedProducts.length,
+        interactions_count: interactionCount,
+        search_queries_performed: search ? 1 : 0,
+        filters_applied: (selectedCategory !== "All" ? 1 : 0) + (priceRange[1] < priceStats.max ? 1 : 0)
+      });
+    };
+  }, [data.length, visibleProducts, filteredData.length, search, selectedCategory, displayedProducts.length, interactionCount, priceRange, priceStats.max]);
 
   // تحميل المزيد من المنتجات
   const loadMoreProducts = () => {

@@ -20,7 +20,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 
 // ✅ المكونات الرئيسية
 import MainLayout from "./layout/MainLayout";
-import Home from "./Home/Home";
+import Home from "./Pages/home/Home";
 import { AllData } from "./constants/AllData";
 import AllAbout from "./Pages/about/AllAbout";
 import AllContact from "./Pages/contact/AllContact";
@@ -49,6 +49,7 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
 import StatisticsDashboard from "./components/statistics/StatisticsDashboard";
 import AdminStatisticsDashboard from "./components/dashboard/AdminStatisticsDashboard";
+import { OrdersProvider } from './context/OrdersContext';
 
 // ✅ نظام التحليلات - مسارات مصححة
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
@@ -214,6 +215,7 @@ const App = () => {
                   <NotificationsProvider>
                     <AnalyticsProvider>
                       <StatisticsProvider>
+                        <OrdersProvider>
                         <AIProvider>
                           <LanguageProvider>
                             <AllData>
@@ -226,6 +228,7 @@ const App = () => {
                             </AllData>
                           </LanguageProvider>
                         </AIProvider>
+                        </OrdersProvider>
                       </StatisticsProvider>
                     </AnalyticsProvider>
                   </NotificationsProvider>
