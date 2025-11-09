@@ -8,7 +8,6 @@ import {
   FaExchangeAlt,
   FaGift,
   FaCreditCard,
-  FaUndo,
   FaAward
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';

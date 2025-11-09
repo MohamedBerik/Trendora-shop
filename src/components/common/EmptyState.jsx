@@ -1,5 +1,3 @@
-// components/common/EmptyState.jsx
-import React from 'react';
 import { FaChartBar } from 'react-icons/fa';
 
 const EmptyState = ({ title = "لا توجد بيانات", message = "لا توجد بيانات متاحة للعرض" }) => {

@@ -7,7 +7,6 @@ import {
   FaLock, 
   FaEye, 
   FaEyeSlash, 
-  FaUser, 
   FaGoogle, 
   FaFacebook, 
   FaApple,

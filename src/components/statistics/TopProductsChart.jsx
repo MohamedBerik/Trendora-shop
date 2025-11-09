@@ -1,5 +1,5 @@
 // components/statistics/TopProductsChart.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -8,7 +8,7 @@ import {
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
-import { Button, StatisticsModal, Card } from '../ui';
+import { Button, StatisticsModal } from '../ui';
 import { useProducts } from '../../hooks/useProducts';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { chartColors, getChartOptions } from '../../utils/charts';
@@ -20,7 +20,7 @@ const TopProductsChart = ({ data, dateRange }) => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('sales'); // 'sales' or 'revenue'
 
-  const { data: products, loading } = useProducts(dateRange);
+  const {  } = useProducts(dateRange);
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);

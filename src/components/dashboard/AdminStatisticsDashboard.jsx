@@ -1,23 +1,18 @@
-// components/dashboard/AdminStatisticsDashboard.jsx
-import React, { useEffect } from 'react'; // أضف useEffect
+import { useEffect } from 'react'; // أضف useEffect
 import {
   FaShoppingCart,
   FaUsers,
   FaDollarSign,
   FaChartLine,
   FaBox,
-  FaStar,
   FaArrowUp,
   FaArrowDown,
-  FaCalendarAlt,
   FaSearch,
   FaEye,
   FaShoppingBag,
   FaSync,
   FaDownload,
-  FaCog,
   FaFilter,
-  FaExclamationTriangle,
   FaFileExport,
   FaDatabase
 } from 'react-icons/fa';

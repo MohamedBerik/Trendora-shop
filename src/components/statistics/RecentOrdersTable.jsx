@@ -1,5 +1,3 @@
-// components/statistics/RecentOrdersTable.jsx
-import React from 'react';
 import { motion } from 'framer-motion';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 

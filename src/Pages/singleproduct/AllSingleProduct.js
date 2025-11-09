@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { apiValue } from "../../constants/AllData";
 import { useCart } from "react-use-cart";
@@ -43,8 +43,7 @@ function SingleProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
   const data = useContext(apiValue);
-  const { addItem, items, updateItemQuantity } = useCart();
-  
+  const { addItem, items, updateItemQuantity } = useCart();  
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isInWishlist, setIsInWishlist] = useState(false);
@@ -96,19 +95,19 @@ function SingleProduct() {
 
   // استخدام useMemo للتحسينات
   const product = useMemo(() => 
-    data.find((item) => item.id == id), 
+    data.find((item) => item.id === id), 
     [data, id]
   );
 
   const isInCart = useMemo(() => 
-    items.some(item => item.id == id), 
+    items.some(item => item.id === id), 
     [items, id]
   );
 
   // تحسين الصور ذات الصلة
   const relatedProducts = useMemo(() => 
     data
-      .filter(item => item.category === product?.category && item.id != product?.id)
+      .filter(item => item.category === product?.category && item.id !== product?.id)
       .slice(0, 4),
     [data, product]
   );
@@ -284,7 +283,7 @@ function SingleProduct() {
   const handleAddToCart = useCallback((source = 'main_button') => {
     if (!product) return;
     
-    const existingItem = items.find(item => item.id == product.id);
+    const existingItem = items.find(item => item.id === product.id);
     
     if (existingItem) {
       updateItemQuantity(existingItem.id, existingItem.quantity + quantity);

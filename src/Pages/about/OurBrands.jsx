@@ -8,7 +8,6 @@ import {
   FaShieldAlt,
   FaCheckCircle,
   FaRegHeart,
-  FaShoppingCart
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import '../../styles/Page.css';

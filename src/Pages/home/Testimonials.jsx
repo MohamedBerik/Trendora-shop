@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { useState, useEffect, useRef } from "react";
+import { Container, Col } from "react-bootstrap";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, Navigation, EffectCards, EffectCreative } from "swiper/modules";
+import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaStar,
@@ -11,8 +11,6 @@ import {
   FaQuoteRight,
   FaPlay,
   FaPause,
-  FaVolumeUp,
-  FaVolumeMute,
   FaShare,
   FaHeart,
   FaRegHeart,
@@ -32,10 +30,8 @@ import { useAnalytics } from "../../hooks/hooks-exports";
 function Testimonials({ onSectionView }) {
   const [darkMode, setDarkMode] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
-  const [muted, setMuted] = useState(false);
   const [expandedTestimonial, setExpandedTestimonial] = useState(null);
   const [likedTestimonials, setLikedTestimonials] = useState(new Set());
-  const audioRef = useRef(null);
   const swiperRef = useRef(null);
 
   // ✅ استخدام useAnalytics

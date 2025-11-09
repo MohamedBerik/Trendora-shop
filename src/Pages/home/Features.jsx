@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Container, Row, Col, Card, Badge, Spinner, Modal } from "react-bootstrap";
+import { useState, useEffect, useCallback } from "react";
+import { Container, Row, Col, Card, Badge, Spinner } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaStar, FaStarHalfAlt, FaRegStar, FaShoppingCart, FaHeart, FaEye, FaTimes, FaPlus, FaMinus, FaShare, FaCheck, FaTruck, FaShieldAlt, FaSync } from "react-icons/fa";
+import { FaStar, FaStarHalfAlt, FaRegStar, FaShoppingCart, FaHeart, FaEye, FaPlus, FaMinus, FaCheck, FaTruck, FaShieldAlt, FaSync } from "react-icons/fa";
 import { useCart } from "react-use-cart";
 import { useWishlist } from "../../context/WishlistContext";
 
@@ -21,12 +21,12 @@ function Features({ onSectionView }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const navigate = useNavigate();
-  const { addItem, updateItemQuantity, getItem } = useCart();
+  const { addItem } = useCart();
 
   // ✅ استخدام useAnalytics
   const { trackEvent, trackProductView, trackAddToCart } = useAnalytics();
 
-  const { wishlist, wishlistCount, toggleWishlist, isInWishlist } = useWishlist();
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const isDark = localStorage.getItem("darkMode") === "true";

@@ -4,7 +4,6 @@ import {
   FaGift,
   FaCreditCard,
   FaEnvelope,
-  FaCalendarAlt,
   FaUser,
   FaPalette,
   FaMagic,
@@ -13,14 +12,9 @@ import {
   FaCheckCircle,
   FaStar,
   FaShare,
-  FaDownload,
-  FaPrint,
   FaShoppingCart,
   FaArrowRight,
-  FaRegSmile,
-  FaRegHeart,
-  FaBirthdayCake,
-  FaGlassCheers
+  FaRegSmile
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/Page.css";
@@ -100,7 +94,6 @@ function GiftCardsPage() {
   // UI state
   const [activeStep, setActiveStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [previewCard, setPreviewCard] = useState(false);
   const [customDesign, setCustomDesign] = useState({
     primaryColor: "#667eea",
     secondaryColor: "#764ba2",

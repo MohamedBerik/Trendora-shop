@@ -1,5 +1,4 @@
 // components/statistics/TopCustomersTable.jsx
-import React from 'react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '../../utils/formatters';
 

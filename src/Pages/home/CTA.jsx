@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Container, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaArrowRight,

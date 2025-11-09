@@ -1,5 +1,4 @@
 // components/statistics/StatCard.jsx
-import React from 'react';
 import { motion } from 'framer-motion';
 import { formatCurrency, formatNumber, formatPercentage } from '../../utils/formatters';
 

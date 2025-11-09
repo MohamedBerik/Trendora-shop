@@ -4,7 +4,6 @@ import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { FaRocket, FaUsers, FaAward, FaHeart, FaShoppingBag, FaGlobe, FaShieldAlt, FaLeaf } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import "../../styles/Page.css";
-import analyticsService from '../../services/analyticsService';
 
 const AboutUs = () => {
   const stats = [

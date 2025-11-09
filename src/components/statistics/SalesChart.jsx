@@ -1,5 +1,3 @@
-// components/statistics/SalesChart.jsx
-import React from 'react';
 import { Line } from 'react-chartjs-2';
 import { chartConfigs, getSalesChartData } from '../../utils/charts';
 // ❌ لا حاجة لـ ChartJS.register هنا

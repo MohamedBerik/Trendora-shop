@@ -36,6 +36,7 @@ import ProfilePage from "./components/profile/ProfilePage";
 import SaleItemsPage from "./Pages/sale-items/SaleItems";
 import OrdersPage from "./Pages/orders/OrdersPage";
 import WishlistPage from "./Pages/wishlist/WishlistPage";
+import ReviewsPage from "./Pages/reviews/ReviewsPage";
 import PremiumCollectionPage from "./Pages/premium-collection/PremiumCollectionPage";
 import GiftCardsPage from "./Pages/gift-cards/GiftCardsPage";
 import BestSellersPage from "./Pages/best-sellers/BestSellersPage";
@@ -47,18 +48,25 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { LoadingProvider } from "./context/LoadingContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
+import { OrdersProvider } from "./context/OrdersContext";
+import { ReviewsProvider } from "./context/ReviewsContext";
+import { ProductsProvider } from "./context/ProductsContext";
+
+// ✅ المكونات الإحصائية
 import StatisticsDashboard from "./components/statistics/StatisticsDashboard";
 import AdminStatisticsDashboard from "./components/dashboard/AdminStatisticsDashboard";
-import { OrdersProvider } from './context/OrdersContext';
 
-// ✅ نظام التحليلات - مسارات مصححة
+// ✅ نظام التحليلات
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
 import { StatisticsProvider } from "./components/providers/StatisticsProvider";
-import serviceRegistry from "./services/serviceRegistry"; // ✅ استخدام serviceRegistry
+import serviceRegistry from "./services/serviceRegistry";
 
 // ✅ حدود الأخطاء
 import ErrorBoundary from "./Pages/error/ErrorBoundary";
 import PageNotFound from "./Pages/error/PageNotFound";
+
+import OrderTracking from './components/tracking/OrderTracking';
+
 
 // 🎯 مكون تهيئة التحليلات
 const AnalyticsInitializer = () => {
@@ -95,7 +103,7 @@ const AnalyticsInitializer = () => {
 // 🚀 إعداد الـ Router مع تحسينات
 const router = createBrowserRouter([
   {
-    element: <MainLayout />, // ✅ AIShoppingAssistant سيتم وضعه داخل MainLayout
+    element: <MainLayout />,
     errorElement: <PageNotFound />,
     children: [
       {
@@ -183,6 +191,10 @@ const router = createBrowserRouter([
         element: <WishlistPage />,
       },
       {
+        path: "/reviews",
+        element: <ReviewsPage />,
+      },
+      {
         path: "/premium-collection",
         element: <PremiumCollectionPage />,
       },
@@ -198,6 +210,10 @@ const router = createBrowserRouter([
         path: "/admin-dashboard",
         element: <AdminStatisticsDashboard />,
       },
+      {
+        path: "/tracking/:orderId",
+        element: <OrderTracking />,
+      },
     ],
   },
 ]);
@@ -210,30 +226,36 @@ const App = () => {
         <ThemeProvider>
           <LoadingProvider>
             <AuthProvider>
-              <CartProvider>
-                <WishlistProvider>
-                  <NotificationsProvider>
-                    <AnalyticsProvider>
-                      <StatisticsProvider>
-                        <OrdersProvider>
-                        <AIProvider>
-                          <LanguageProvider>
-                            <AllData>
-                              {/* ✅ مكون تهيئة التحليلات */}
-                              <AnalyticsInitializer />
-                              {/* ✅ مساعد الذكاء الاصطناعي */}
-                              <AIShoppingAssistant />
-                              <RouterProvider router={router} />
-                              <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={true} pauseOnFocusLoss draggable pauseOnHover theme="colored" style={{ fontSize: "14px" }} />
-                            </AllData>
-                          </LanguageProvider>
-                        </AIProvider>
-                        </OrdersProvider>
-                      </StatisticsProvider>
-                    </AnalyticsProvider>
-                  </NotificationsProvider>
-                </WishlistProvider>
-              </CartProvider>
+              <ProductsProvider>
+                <CartProvider>
+                  <WishlistProvider>
+                    <NotificationsProvider>
+                      <AnalyticsProvider>
+                        <StatisticsProvider>
+                          <OrdersProvider>
+                            <ReviewsProvider>
+                              {" "}
+                              {/* ✅ إضافة ReviewsProvider هنا */}
+                              <AIProvider>
+                                <LanguageProvider>
+                                  <AllData>
+                                    {/* ✅ مكون تهيئة التحليلات */}
+                                    <AnalyticsInitializer />
+                                    {/* ✅ مساعد الذكاء الاصطناعي */}
+                                    <AIShoppingAssistant />
+                                    <RouterProvider router={router} />
+                                    <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={true} pauseOnFocusLoss draggable pauseOnHover theme="colored" style={{ fontSize: "14px" }} />
+                                  </AllData>
+                                </LanguageProvider>
+                              </AIProvider>
+                            </ReviewsProvider>
+                          </OrdersProvider>
+                        </StatisticsProvider>
+                      </AnalyticsProvider>
+                    </NotificationsProvider>
+                  </WishlistProvider>
+                </CartProvider>
+              </ProductsProvider>
             </AuthProvider>
           </LoadingProvider>
         </ThemeProvider>

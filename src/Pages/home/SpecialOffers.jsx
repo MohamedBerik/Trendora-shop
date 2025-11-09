@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Container, Row, Col, Badge } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaClock, FaFire, FaArrowRight, FaTag, FaShoppingBag } from "react-icons/fa";
 
@@ -16,7 +16,6 @@ function SpecialOffers({ onSectionView }) {
     seconds: 0
   });
 
-  const navigate = useNavigate();
   
   // ✅ استخدام useAnalytics
   const { trackEvent } = useAnalytics();

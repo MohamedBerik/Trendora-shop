@@ -1,5 +1,4 @@
-// components/providers/AnalyticsProvider.js
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import serviceRegistry from '../../services/serviceRegistry';
 
 export const AnalyticsContext = createContext();

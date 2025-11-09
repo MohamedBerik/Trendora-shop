@@ -15,14 +15,10 @@ import {
   FaFilter,
   FaTimes,
   FaSortAmountDown,
-  FaTag,
   FaBolt,
   FaRegClock,
   FaCalendarAlt,
-  FaShippingFast,
-  FaCheckCircle,
-  FaArrowRight,
-  FaRegHeart
+  FaArrowRight
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/Page.css";

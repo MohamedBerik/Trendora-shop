@@ -1,5 +1,4 @@
-// components/statistics/CustomerStats.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FaUsers, 
@@ -12,11 +11,10 @@ import {
   FaCrown
 } from 'react-icons/fa';
 import StatisticsModal from '../ui/StatisticsModal';
-import ConfirmModal from '../ui/ConfirmModal';
 import Button from '../ui/Button';
 import { formatNumber, formatPercentage, formatCurrency } from '../../utils/formatters';
 
-const CustomerStats = ({ data, dateRange }) => {
+const CustomerStats = ({ data }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isCustomersModalOpen, setIsCustomersModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');

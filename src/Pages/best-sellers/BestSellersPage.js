@@ -6,10 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   FaTrophy, FaCrown, FaStar, FaHeart, FaShoppingCart, FaEye, 
   FaSearch, FaFilter, FaTimes, FaSortAmountDown, FaFire, 
-  FaChartLine, FaAward, FaMedal, FaRegStar, FaCheckCircle, 
-  FaShippingFast, FaArrowRight, FaChartBar, FaUsers, FaBolt, 
-  FaRegHeart 
-} from "react-icons/fa";
+  FaChartLine, FaAward, FaMedal, FaArrowRight, FaChartBar, FaUsers} from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/Page.css";
 
@@ -599,29 +596,40 @@ function BestSellersPage() {
     return { total, bestsellers, topRated, totalSales };
   }, [bestSellers]);
 
-  // Best seller features
-  const bestSellerFeatures = [
-    {
-      icon: <FaTrophy />,
-      title: "Customer Favorites",
-      description: "Products loved by thousands",
-    },
-    {
-      icon: <FaChartLine />,
-      title: "Proven Quality",
-      description: "Tested and approved by customers",
-    },
-    {
-      icon: <FaAward />,
-      title: "Award Winning",
-      description: "Top rated and reviewed",
-    },
-    {
-      icon: <FaUsers />,
-      title: "Community Choice",
-      description: "Recommended by shoppers like you",
-    },
-  ];
+// اترك الكود كاملًا كما هو وأضف هذا الاستخدام:
+const bestSellerFeatures = [
+  {
+    icon: <FaTrophy />,
+    title: "Customer Favorites", 
+    description: "Products loved by thousands",
+  },
+  {
+    icon: <FaChartLine />,
+    title: "Proven Quality",
+    description: "Tested and approved by customers", 
+  },
+  {
+    icon: <FaAward />,
+    title: "Award Winning",
+    description: "Top rated and reviewed",
+  },
+  {
+    icon: <FaUsers />,
+    title: "Community Choice",
+    description: "Recommended by shoppers like you",
+  },
+];
+
+// وأضف هذا الكود في أي مكان في الـ JSX لاستخدامه:
+<div className="features-section">
+  {bestSellerFeatures.map((feature, index) => (
+    <div key={index} className="feature-card">
+      {feature.icon}
+      <h4>{feature.title}</h4>
+      <p>{feature.description}</p>
+    </div>
+  ))}
+</div>
 
   return (
     <div className="container-fluid py-4 bestsellers-page">

@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect, useMemo, useCallback } from "re
 import { apiValue } from "../../constants/AllData";
 import { useCart } from "react-use-cart";
 import { Link, useNavigate } from "react-router-dom";
-import { FaCrown, FaStar, FaHeart, FaShoppingCart, FaEye, FaSearch, FaFilter, FaTimes, FaSortAmountDown, FaAward, FaShieldAlt, FaRocket, FaCheckCircle, FaShippingFast, FaHeadset, FaLeaf, FaGem, FaRegGem, FaChevronRight, FaFire, FaBolt } from "react-icons/fa";
+import { FaCrown, FaStar, FaHeart, FaShoppingCart, FaEye, FaSearch, FaFilter, FaTimes, FaSortAmountDown, FaAward, FaShieldAlt, FaCheckCircle, FaShippingFast, FaGem, FaChevronRight, FaBolt } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/Page.css";
 
@@ -42,6 +42,18 @@ function PremiumCollectionPage() {
       max: maxPrice < 5000 ? 5000 : maxPrice,
     };
   }, [premiumProducts]);
+
+  // ✅ إصلاح: دالة تحديد مستوى المنتج المميز
+  const getPremiumLevel = useCallback((price) => {
+    if (price >= 1000) return "exclusive";
+    if (price >= 500) return "luxury";
+    return "premium";
+  }, []);
+
+  // ✅ إصلاح: دالة تحديد شارة المنتج بناءً على السعر
+  const getProductBadgeLevel = useCallback((item) => {
+    return getPremiumLevel(item.price);
+  }, [getPremiumLevel]);
 
   // Filter and sort products
   const filteredData = useMemo(() => {
@@ -190,33 +202,34 @@ function PremiumCollectionPage() {
 
   // Product Card Component
   const ProductCard = React.memo(({ item, index }) => {
-    const getPremiumLevel = () => {
-      if (item.price >= 1000) return "exclusive";
-      if (item.price >= 500) return "luxury";
-      return "premium";
-    };
+    // ✅ إصلاح: استخدام دالة getProductBadgeLevel بدلاً من getPremiumLevel المحلية
+    const premiumLevel = getProductBadgeLevel(item);
 
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: index * 0.1 }} className="col-xl-3 col-lg-4 col-md-6 mb-4">
         <div className="card product-card h-100 border-0 shadow-lg premium-card" onClick={(e) => handleProductClick(item.id, e)} style={{ cursor: "pointer" }}>
           {/* Product Image with Overlay */}
-          {/* بدل الـ Overlay الكامل - استخدم هذا */}
-          <div className="position-relative">
+          <div className="position-relative product-image-container">
             <img src={item.images?.[0]} className="card-img-top product-image" alt={item.title} style={{ height: "280px", objectFit: "cover" }} />
 
+            {/* Premium Badge */}
+            <div className="position-absolute top-0 start-0 m-3">
+              <PremiumBadge level={premiumLevel} />
+            </div>
+
             {/* أزرار تظهر عند التمرير */}
-            <div className="position-absolute top-0 end-0 m-3 d-flex gap-2">
-              <button className="btn btn-light rounded-circle shadow-sm product-action-btn" style={{ width: "45px", height: "45px", opacity: 0 }} onClick={(e) => toggleWishlist(item.id, e)}>
+            <div className="position-absolute top-0 end-0 m-3 d-flex gap-2 product-actions">
+              <button className="btn btn-light rounded-circle shadow-sm action-btn" style={{ width: "45px", height: "45px" }} onClick={(e) => toggleWishlist(item.id, e)}>
                 <FaHeart className={wishlist.includes(item.id) ? "text-danger" : "text-muted"} />
               </button>
-              <button className="btn btn-light rounded-circle shadow-sm product-action-btn" style={{ width: "45px", height: "45px", opacity: 0 }} onClick={() => setQuickView(item)}>
+              <button className="btn btn-light rounded-circle shadow-sm action-btn" style={{ width: "45px", height: "45px" }} onClick={() => setQuickView(item)}>
                 <FaEye className="text-dark" />
               </button>
             </div>
 
             {/* زر سريع للإضافة للسلة */}
-            <div className="position-absolute bottom-0 start-0 end-0 p-3">
-              <motion.button whileHover={{ scale: 1.02 }} className="btn btn-gold w-100 add-to-cart-btn" style={{ opacity: 0 }} onClick={(e) => handleAddToCart(item, e)}>
+            <div className="position-absolute bottom-0 start-0 end-0 p-3 product-actions">
+              <motion.button whileHover={{ scale: 1.02 }} className="btn btn-gold w-100 add-to-cart-btn" onClick={(e) => handleAddToCart(item, e)}>
                 <FaShoppingCart className="me-2" />
                 Add to Cart
               </motion.button>
@@ -276,6 +289,11 @@ function PremiumCollectionPage() {
                     Top Rated
                   </small>
                 )}
+                {/* ✅ إضافة شارة المستوى المميز */}
+                <small className={`text-${premiumLevel === 'exclusive' ? 'danger' : premiumLevel === 'luxury' ? 'warning' : 'primary'}`}>
+                  <FaGem className="me-1" />
+                  {premiumLevel.charAt(0).toUpperCase() + premiumLevel.slice(1)}
+                </small>
               </div>
             </div>
           </div>
@@ -294,7 +312,8 @@ function PremiumCollectionPage() {
               <div className="modal-content premium-modal">
                 <div className="modal-header">
                   <div className="d-flex align-items-center">
-                    <PremiumBadge level={quickView.price >= 1000 ? "exclusive" : quickView.price >= 500 ? "luxury" : "premium"} />
+                    {/* ✅ إصلاح: استخدام دالة getPremiumLevel مباشرة */}
+                    <PremiumBadge level={getPremiumLevel(quickView.price)} />
                     <h5 className="modal-title ms-2">{quickView.title}</h5>
                   </div>
                   <button type="button" className="btn-close" onClick={() => setQuickView(null)}></button>
@@ -343,6 +362,21 @@ function PremiumCollectionPage() {
                         </div>
                       </div>
 
+                      {/* ✅ إضافة معلومات المستوى المميز */}
+                      <div className="premium-level-info mb-4">
+                        <h6 className="fw-bold mb-2">Product Tier:</h6>
+                        <div className="d-flex align-items-center">
+                          <PremiumBadge level={getPremiumLevel(quickView.price)} />
+                          <small className="text-muted ms-2">
+                            {getPremiumLevel(quickView.price) === 'exclusive' 
+                              ? 'Ultimate luxury with exclusive features' 
+                              : getPremiumLevel(quickView.price) === 'luxury' 
+                              ? 'High-end luxury experience' 
+                              : 'Premium quality standards'}
+                          </small>
+                        </div>
+                      </div>
+
                       <div className="d-flex gap-2 mt-4">
                         <button
                           onClick={(e) => {
@@ -367,7 +401,7 @@ function PremiumCollectionPage() {
         )}
       </AnimatePresence>
     ),
-    [quickView, handleAddToCart, premiumBenefits]
+    [quickView, handleAddToCart, premiumBenefits, getPremiumLevel]
   );
 
   // Collection statistics
@@ -377,8 +411,21 @@ function PremiumCollectionPage() {
     const luxuryCount = premiumProducts.filter((item) => item.price >= 500).length;
     const averageRating = premiumProducts.reduce((sum, item) => sum + (item.rating || 0), 0) / total;
 
-    return { total, averagePrice, luxuryCount, averageRating };
-  }, [premiumProducts]);
+    // ✅ إضافة إحصائيات المستويات المميزة
+    const premiumCount = premiumProducts.filter((item) => getPremiumLevel(item.price) === 'premium').length;
+    const luxuryPremiumCount = premiumProducts.filter((item) => getPremiumLevel(item.price) === 'luxury').length;
+    const exclusiveCount = premiumProducts.filter((item) => getPremiumLevel(item.price) === 'exclusive').length;
+
+    return { 
+      total, 
+      averagePrice, 
+      luxuryCount, 
+      averageRating,
+      premiumCount,
+      luxuryPremiumCount,
+      exclusiveCount
+    };
+  }, [premiumProducts, getPremiumLevel]);
 
   return (
     <div className="container-fluid py-4 premium-collection-page">
@@ -395,7 +442,7 @@ function PremiumCollectionPage() {
 
           {/* Collection Statistics */}
           <div className="row justify-content-center">
-            <div className="col-lg-8">
+            <div className="col-lg-10">
               <div className="premium-stats">
                 <div className="row text-center">
                   <div className="col-md-3 col-6">
@@ -410,16 +457,22 @@ function PremiumCollectionPage() {
                       <p className="text-light mb-0">Avg. Price</p>
                     </div>
                   </div>
-                  <div className="col-md-3 col-6">
+                  <div className="col-md-2 col-4">
                     <div className="stat-item">
-                      <h3 className="text-gold fw-bold">{collectionStats.luxuryCount}</h3>
-                      <p className="text-light mb-0">Luxury Items</p>
+                      <h3 className="text-primary fw-bold">{collectionStats.premiumCount}</h3>
+                      <p className="text-light mb-0">Premium</p>
                     </div>
                   </div>
-                  <div className="col-md-3 col-6">
+                  <div className="col-md-2 col-4">
                     <div className="stat-item">
-                      <h3 className="text-gold fw-bold">{collectionStats.averageRating.toFixed(1)}</h3>
-                      <p className="text-light mb-0">Avg. Rating</p>
+                      <h3 className="text-warning fw-bold">{collectionStats.luxuryPremiumCount}</h3>
+                      <p className="text-light mb-0">Luxury</p>
+                    </div>
+                  </div>
+                  <div className="col-md-2 col-4">
+                    <div className="stat-item">
+                      <h3 className="text-danger fw-bold">{collectionStats.exclusiveCount}</h3>
+                      <p className="text-light mb-0">Exclusive</p>
                     </div>
                   </div>
                 </div>
@@ -567,15 +620,24 @@ function PremiumCollectionPage() {
               <div className="mb-4">
                 <h6 className="fw-semibold mb-3">Premium Tiers</h6>
                 <div className="d-grid gap-2">
-                  <button className="btn btn-outline-warning btn-sm text-start">
+                  <button 
+                    className={`btn btn-sm text-start ${priceRange[1] >= 500 ? 'btn-outline-secondary' : 'btn-outline-warning'}`}
+                    onClick={() => setPriceRange([100, 499])}
+                  >
                     <FaGem className="me-2" />
                     Premium ($100 - $499)
                   </button>
-                  <button className="btn btn-outline-warning btn-sm text-start">
+                  <button 
+                    className={`btn btn-sm text-start ${priceRange[1] >= 1000 ? 'btn-outline-secondary' : 'btn-outline-warning'}`}
+                    onClick={() => setPriceRange([500, 999])}
+                  >
                     <FaGem className="me-2" />
                     Luxury ($500 - $999)
                   </button>
-                  <button className="btn btn-outline-warning btn-sm text-start">
+                  <button 
+                    className="btn btn-outline-warning btn-sm text-start"
+                    onClick={() => setPriceRange([1000, priceStats.max])}
+                  >
                     <FaCrown className="me-2" />
                     Exclusive ($1000+)
                   </button>
@@ -826,7 +888,54 @@ function PremiumCollectionPage() {
           line-height: 1.4;
           height: 2.8em;
         }
-          
+
+        /* ضروري لرؤية الأزرار */
+        .product-image-container {
+          overflow: hidden;
+          position: relative;
+        }
+
+        .product-actions {
+          transform: translateY(-50%);
+          opacity: 0;
+          transition: all 0.3s ease;
+        }
+
+        .action-btn {
+          transform: translateY(20px);
+          opacity: 0;
+          transition: all 0.3s ease;
+          margin: 0 5px;
+        }
+
+        .product-image-container:hover .product-actions {
+          opacity: 1;
+        }
+
+        .product-image-container:hover .action-btn {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .product-image-container:hover .action-btn:nth-child(1) {
+          transition-delay: 0.1s;
+        }
+
+        .product-image-container:hover .action-btn:nth-child(2) {
+          transition-delay: 0.2s;
+        }
+
+        .product-image-container:hover .action-btn:nth-child(3) {
+          transition-delay: 0.3s;
+        }
+
+        .product-image {
+          transition: transform 0.3s ease;
+        }
+
+        .product-image-container:hover .product-image {
+          transform: scale(1.05);
+        }
 
         @media (max-width: 768px) {
           .premium-header {
@@ -842,55 +951,6 @@ function PremiumCollectionPage() {
             padding: 1rem;
           }
         }
-
-/* ضروري لرؤية الأزرار */
-.product-image-container {
-  overflow: hidden;
-  position: relative;
-}
-
-.product-actions {
-  transform: translateY(-50%);
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.action-btn {
-  transform: translateY(20px);
-  opacity: 0;
-  transition: all 0.3s ease;
-  margin: 0 5px;
-}
-
-.product-image-container:hover .product-actions {
-  opacity: 1;
-}
-
-.product-image-container:hover .action-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.product-image-container:hover .action-btn:nth-child(1) {
-  transition-delay: 0.1s;
-}
-
-.product-image-container:hover .action-btn:nth-child(2) {
-  transition-delay: 0.2s;
-}
-
-.product-image-container:hover .action-btn:nth-child(3) {
-  transition-delay: 0.3s;
-}
-
-.product-image {
-  transition: transform 0.3s ease;
-}
-
-.product-image-container:hover .product-image {
-  transform: scale(1.05);
-}
-
       `}</style>
     </div>
   );

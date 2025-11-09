@@ -35,7 +35,7 @@ function SignUp() {
   const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep] = useState(1);
 
   const { login } = useAuth();
   const navigate = useNavigate();

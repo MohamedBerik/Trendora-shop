@@ -10,8 +10,6 @@ export const useProducts = (dateRange, options = {}) => {
   const {
     limit = 10,
     category = null,
-    sortBy = 'sales',
-    sortOrder = 'desc',
     includeInventory = false
   } = options;
 

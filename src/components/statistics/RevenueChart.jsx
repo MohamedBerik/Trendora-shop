@@ -1,5 +1,3 @@
-// components/statistics/RevenueChart.jsx
-import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { chartConfigs, getRevenueChartData } from '../../utils/charts';
 // ❌ لا حاجة لـ ChartJS.register هنا

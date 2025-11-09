@@ -1,5 +1,4 @@
-// components/providers/StatisticsProvider.js
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import { createContext, useState, useContext, useCallback } from 'react';
 import serviceRegistry from '../../services/serviceRegistry';
 
 // إنشاء Context للإحصائيات

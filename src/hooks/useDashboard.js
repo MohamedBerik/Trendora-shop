@@ -25,7 +25,7 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
   const salesData = useSalesData(dateRange, { trackEvents: enableTracking });
   const products = useProducts(dateRange, { trackEvents: enableTracking });
   const customers = useCustomers(dateRange, { trackEvents: enableTracking });
-  const realTimeData = useRealTimeData({ 
+  const realTimeData = useRealTimeData({
     enabled: realTime && enableRealtime,
     trackEvents: enableTracking,
     autoStart: realTime
@@ -35,18 +35,18 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
   const { trackEvent, trackError } = useAnalytics();
 
   // ✅ تجميع حالة التحميل
-  const loading = statistics.loading || salesData.loading || 
+  const loading = statistics.loading || salesData.loading ||
                   products.loading || customers.loading;
 
   // ✅ تجميع الأخطاء
-  const error = statistics.error || salesData.error || 
+  const error = statistics.error || salesData.error ||
                 products.error || customers.error;
 
   // ✅ دالة مساعدة للحصول على معلمات نطاق التاريخ
   const getDateRangeParams = useCallback((range) => {
     const now = new Date();
     const startDate = new Date();
-    
+   
     switch (range) {
       case 'today':
         startDate.setHours(0, 0, 0, 0);
@@ -64,27 +64,40 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
         startDate.setDate(now.getDate() - 7);
     }
 
-    return { 
+    return {
       start_date: startDate.toISOString(),
       end_date: now.toISOString(),
       range: range
     };
   }, []);
 
+  // ✅ إنشاء نظرة عامة مجمعة
+  const createOverview = useCallback((stats, sales, productsData, customersData) => {
+    return {
+      totalSales: sales?.total_revenue || stats?.total_sales || 0,
+      totalOrders: sales?.total_orders || stats?.total_orders || 0,
+      totalCustomers: customersData?.total_customers || stats?.total_customers || 0,
+      totalProducts: productsData?.total_products || stats?.total_products || 0,
+      conversionRate: sales?.conversion_rate || stats?.conversion_rate || 0,
+      averageOrderValue: sales?.average_order_value || stats?.average_order_value || 0,
+      liveVisitors: realTimeData.data?.liveVisitors || 0,
+      activeSessions: realTimeData.data?.activeSessions || 0,
+      bounceRate: stats?.bounce_rate || 0,
+      avgSessionDuration: stats?.avg_session_duration || 0
+    };
+  }, [realTimeData.data]);
+
   // ✅ جلب بيانات Dashboard من analyticsService
   const fetchDashboardData = useCallback(async () => {
     try {
       if (enableTracking) {
-        trackEvent('dashboard_data_fetch', { 
+        trackEvent('dashboard_data_fetch', {
           dateRange,
           realTime,
           tracking_source: 'useDashboard'
         });
       }
-
-      // استخدام analyticsService لجلب البيانات
-      const dateParams = getDateRangeParams(dateRange);
-      
+     
       // محاكاة جلب البيانات من analyticsService
       const sessionInfo = analyticsService.getSessionInfo();
       const mockStats = {
@@ -148,7 +161,7 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
   const refreshAll = useCallback(async (source = 'manual') => {
     try {
       if (enableTracking) {
-        trackEvent('dashboard_refresh_all', { 
+        trackEvent('dashboard_refresh_all', {
           source,
           dateRange,
           realTime,
@@ -158,7 +171,7 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
 
       // استخدام fetchDashboardData المحدثة
       const dashboardData = await fetchDashboardData();
-      
+     
       // تحديث البيانات في الهوكس الفردية
       if (statistics.setData && dashboardData.statistics) {
         statistics.setData(dashboardData.statistics);
@@ -266,7 +279,7 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
         dateRange,
         realTime
       });
-      
+     
       return {
         success: false,
         error: error.message
@@ -274,27 +287,11 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
     }
   }, [statistics.data, salesData.data, products.data, customers.data, realTimeData.data, dateRange, realTime, dataExport, trackEvent, trackError, enableTracking, createOverview]);
 
-  // ✅ إنشاء نظرة عامة مجمعة
-  const createOverview = useCallback((stats, sales, products, customers) => {
-    return {
-      totalSales: sales?.total_revenue || stats?.total_sales || 0,
-      totalOrders: sales?.total_orders || stats?.total_orders || 0,
-      totalCustomers: customers?.total_customers || stats?.total_customers || 0,
-      totalProducts: products?.total_products || stats?.total_products || 0,
-      conversionRate: sales?.conversion_rate || stats?.conversion_rate || 0,
-      averageOrderValue: sales?.average_order_value || stats?.average_order_value || 0,
-      liveVisitors: realTimeData.data?.liveVisitors || 0,
-      activeSessions: realTimeData.data?.activeSessions || 0,
-      bounceRate: stats?.bounce_rate || 0,
-      avgSessionDuration: stats?.avg_session_duration || 0
-    };
-  }, [realTimeData.data]);
-
   // ✅ بيانات Dashboard المجمعة
   const dashboardData = {
     // البيانات الأساسية
     overview: createOverview(statistics.data, salesData.data, products.data, customers.data),
-    
+   
     // البيانات التفصيلية
     statistics: statistics.data,
     sales: salesData.data,
@@ -307,7 +304,7 @@ export const useDashboard = (initialDateRange = 'week', options = {}) => {
       cart_analytics: products.data?.cart_analytics,
       search_analytics: customers.data?.search_analytics
     },
-    
+   
     // معلومات التحديث
     lastUpdated: lastRefreshed || statistics.lastUpdated,
     dateRange,

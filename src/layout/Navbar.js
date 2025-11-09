@@ -1,18 +1,17 @@
-import React, { useState, useContext, useEffect, useRef, useCallback } from "react";
+import { useState, useContext, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "react-use-cart";
-import { useAuth } from "../../context/AuthContext";
-import { FaShoppingCart, FaUserCircle, FaBell, FaBars, FaSearch, FaTrash, FaMoon, FaSun, FaHeart, FaStar, FaChevronDown, FaTimes, FaHistory, FaFire } from "react-icons/fa";
-import AuthModal from "../../Pages/auth/AuthModal";
-import { apiValue } from "../../constants/AllData";
+import { useAuth } from "../context/AuthContext";
+import { FaShoppingCart, FaUserCircle, FaBars, FaSearch, FaTrash, FaMoon, FaSun, FaHeart, FaStar, FaChevronDown, FaHistory, FaFire } from "react-icons/fa";
+import AuthModal from "../Pages/auth/AuthModal";
+import { apiValue } from "../constants/AllData";
 import { motion, AnimatePresence } from "framer-motion";
-import NotificationBell from "../../Pages/notifications/NotificationBell";
-import AIChatButton from "../../components/ai/AIChatButton";
-import LanguageSwitcher from "../../components/common/LanguageSwitcher";
-import { useWishlist } from "../../context/WishlistContext";
+import NotificationBell from "../Pages/notifications/NotificationBell";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
+import { useWishlist } from "../context/WishlistContext";
 
 // ✅ استيراد useAnalytics
-import { useAnalytics } from "../../hooks/hooks-exports";
+import { useAnalytics } from "../hooks/hooks-exports";
 
 export default function ModernNavbar() {
   const { items, totalItems, removeItem, cartTotal, updateItemQuantity, emptyCart } = useCart();
@@ -25,10 +24,7 @@ export default function ModernNavbar() {
   const [hoverCart, setHoverCart] = useState(false);
   const [hoverMega, setHoverMega] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [bellHover, setBellHover] = useState(false);
-  const [bellActive, setBellActive] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [activeSection, setActiveSection] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
@@ -36,7 +32,7 @@ export default function ModernNavbar() {
   const inputRef = useRef(null);
 
   // ✅ استخدام useAnalytics
-  const { trackEvent, trackSearch, trackProductView, trackAddToCart } = useAnalytics();
+  const { trackEvent, trackSearch, trackProductView } = useAnalytics();
 
   // 🔧 Enhanced Categories Structure
   const enhancedDropdownSections = {
@@ -81,12 +77,12 @@ export default function ModernNavbar() {
 
   // ✅ تتبع عرض النافبار
   useEffect(() => {
-    trackEvent('navbar_loaded', {
+    trackEvent("navbar_loaded", {
       user_logged_in: !!user,
       cart_items_count: totalItems,
       wishlist_count: getWishlistCount(),
       dark_mode: darkMode,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }, [trackEvent, user, totalItems, getWishlistCount, darkMode]);
 
@@ -115,11 +111,11 @@ export default function ModernNavbar() {
   // 🗑️ Clear search history
   const clearSearchHistory = useCallback(() => {
     // ✅ تتبع مسح سجل البحث
-    trackEvent('search_history_cleared', {
+    trackEvent("search_history_cleared", {
       previous_history_count: searchHistory.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     setSearchHistory([]);
     localStorage.removeItem("searchHistory");
   }, [trackEvent, searchHistory.length]);
@@ -135,11 +131,11 @@ export default function ModernNavbar() {
         trackSearch(trimmedTerm, {
           results_count: suggestions.length,
           has_suggestions: suggestions.length > 0,
-          source: 'navbar_search',
+          source: "navbar_search",
           search_history_count: searchHistory.length,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
+
         saveToSearchHistory(trimmedTerm);
         navigate(`/products?search=${encodeURIComponent(trimmedTerm)}`);
         setSearchTerm("");
@@ -188,10 +184,10 @@ export default function ModernNavbar() {
 
       // ✅ تتبع توليد الاقتراحات
       if (filtered.length > 0) {
-        trackEvent('search_suggestions_generated', {
+        trackEvent("search_suggestions_generated", {
           search_term: trimmedTerm,
           suggestions_count: filtered.length,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     }, 300);
@@ -223,12 +219,12 @@ export default function ModernNavbar() {
         setSuggestions([]);
         setShowPopularSearches(false);
         setIsSearchFocused(false);
-        
+
         // ✅ تتبع استخدام مفتاح Escape
-        trackEvent('search_escape_pressed', {
+        trackEvent("search_escape_pressed", {
           search_term: searchTerm,
           has_suggestions: suggestions.length > 0,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
 
@@ -240,39 +236,42 @@ export default function ModernNavbar() {
   );
 
   // 🔄 Enhanced Search Input Handler
-  const handleSearchChange = useCallback((e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+  const handleSearchChange = useCallback(
+    (e) => {
+      const value = e.target.value;
+      setSearchTerm(value);
 
-    // ✅ تتبع كتابة البحث
-    if (value.length > 0) {
-      trackEvent('search_typing', {
-        input_length: value.length,
-        has_focus: true,
-        timestamp: new Date().toISOString()
-      });
-    }
+      // ✅ تتبع كتابة البحث
+      if (value.length > 0) {
+        trackEvent("search_typing", {
+          input_length: value.length,
+          has_focus: true,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
-    if (!value.trim()) {
-      setSuggestions([]);
-      setShowPopularSearches(true);
-    }
-  }, [trackEvent]);
+      if (!value.trim()) {
+        setSuggestions([]);
+        setShowPopularSearches(true);
+      }
+    },
+    [trackEvent]
+  );
 
   // 🎯 Handle Popular Search Click مع تتبع الإحصائيات
   const handlePopularSearchClick = useCallback(
     (popularTerm) => {
       setSearchTerm(popularTerm);
       saveToSearchHistory(popularTerm);
-      
+
       // ✅ تتبع عملية البحث الشائعة
       trackSearch(popularTerm, {
         results_count: 0,
-        source: 'popular_search',
+        source: "popular_search",
         is_popular: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       navigate(`/products?search=${encodeURIComponent(popularTerm)}`);
       setSuggestions([]);
       setShowPopularSearches(false);
@@ -285,15 +284,15 @@ export default function ModernNavbar() {
   const handleSuggestionClick = useCallback(
     (item) => {
       saveToSearchHistory(item.title);
-      
+
       // ✅ تتبع مشاهدة المنتج من البحث
       trackProductView(item, {
-        source: 'search_suggestion',
+        source: "search_suggestion",
         search_term: searchTerm,
-        suggestion_rank: suggestions.findIndex(s => s.id === item.id) + 1,
-        timestamp: new Date().toISOString()
+        suggestion_rank: suggestions.findIndex((s) => s.id === item.id) + 1,
+        timestamp: new Date().toISOString(),
       });
-      
+
       navigate(`/singleproduct/${item.id}`);
       setSearchTerm("");
       setSuggestions([]);
@@ -304,17 +303,20 @@ export default function ModernNavbar() {
   );
 
   // 🎯 Handle Search History Click
-  const handleSearchHistoryClick = useCallback((term) => {
-    setSearchTerm(term);
-    inputRef.current?.focus();
-    
-    // ✅ تتبع استخدام سجل البحث
-    trackEvent('search_history_used', {
-      search_term: term,
-      history_position: searchHistory.indexOf(term) + 1,
-      timestamp: new Date().toISOString()
-    });
-  }, [trackEvent, searchHistory]);
+  const handleSearchHistoryClick = useCallback(
+    (term) => {
+      setSearchTerm(term);
+      inputRef.current?.focus();
+
+      // ✅ تتبع استخدام سجل البحث
+      trackEvent("search_history_used", {
+        search_term: term,
+        history_position: searchHistory.indexOf(term) + 1,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    [trackEvent, searchHistory]
+  );
 
   // 🌙 Dark Mode Handler
   useEffect(() => {
@@ -329,11 +331,11 @@ export default function ModernNavbar() {
     document.body.style.background = newDarkMode ? "#0f172a" : "#f8fafc";
     document.body.style.color = newDarkMode ? "#e2e8f0" : "#1e293b";
     document.body.style.transition = "all 0.3s ease";
-    
+
     // ✅ تتبع تغيير وضع الظلام
-    trackEvent('dark_mode_toggled', {
-      new_mode: newDarkMode ? 'dark' : 'light',
-      timestamp: new Date().toISOString()
+    trackEvent("dark_mode_toggled", {
+      new_mode: newDarkMode ? "dark" : "light",
+      timestamp: new Date().toISOString(),
     });
   };
 
@@ -357,11 +359,11 @@ export default function ModernNavbar() {
       }
 
       // ✅ تتبع التنقل في التصنيفات
-      trackEvent('category_navigation', {
+      trackEvent("category_navigation", {
         category_type: categoryType,
         category_value: value,
-        source: 'navbar_mega_menu',
-        timestamp: new Date().toISOString()
+        source: "navbar_mega_menu",
+        timestamp: new Date().toISOString(),
       });
 
       navigate(`/products?${queryParam}`);
@@ -372,88 +374,94 @@ export default function ModernNavbar() {
   );
 
   // 🛒 Handle Cart Interactions with Analytics
-  const handleCartItemClick = useCallback((item) => {
-    // ✅ تتبع النقر على عنصر في السلة
-    trackEvent('cart_item_click', {
-      product_id: item.id,
-      product_name: item.title,
-      product_price: item.price,
-      quantity: item.quantity,
-      source: 'navbar_cart_dropdown',
-      timestamp: new Date().toISOString()
-    });
-    
-    navigate(`/singleproduct/${item.id}`);
-    setHoverCart(false);
-  }, [navigate, trackEvent]);
+  const handleCartItemClick = useCallback(
+    (item) => {
+      // ✅ تتبع النقر على عنصر في السلة
+      trackEvent("cart_item_click", {
+        product_id: item.id,
+        product_name: item.title,
+        product_price: item.price,
+        quantity: item.quantity,
+        source: "navbar_cart_dropdown",
+        timestamp: new Date().toISOString(),
+      });
+
+      navigate(`/singleproduct/${item.id}`);
+      setHoverCart(false);
+    },
+    [navigate, trackEvent]
+  );
 
   const handleViewCart = useCallback(() => {
     // ✅ تتبع النقر على عرض السلة
-    trackEvent('view_cart_click', {
+    trackEvent("view_cart_click", {
       cart_items_count: totalItems,
       cart_total: cartTotal,
-      source: 'navbar_cart_dropdown',
-      timestamp: new Date().toISOString()
+      source: "navbar_cart_dropdown",
+      timestamp: new Date().toISOString(),
     });
-    
+
     navigate("/cart");
     setHoverCart(false);
   }, [navigate, trackEvent, totalItems, cartTotal]);
 
   const handleCheckout = useCallback(() => {
     // ✅ تتبع بدء عملية الدفع
-    trackEvent('checkout_initiated', {
+    trackEvent("checkout_initiated", {
       cart_items_count: totalItems,
       cart_total: cartTotal,
-      source: 'navbar_cart_dropdown',
-      timestamp: new Date().toISOString()
+      source: "navbar_cart_dropdown",
+      timestamp: new Date().toISOString(),
     });
-    
+
     navigate("/checkout");
     setHoverCart(false);
   }, [navigate, trackEvent, totalItems, cartTotal]);
 
   const handleClearCart = useCallback(() => {
     // ✅ تتبع مسح السلة
-    trackEvent('cart_cleared', {
+    trackEvent("cart_cleared", {
       previous_items_count: totalItems,
       previous_total: cartTotal,
-      source: 'navbar_cart_dropdown',
-      timestamp: new Date().toISOString()
+      source: "navbar_cart_dropdown",
+      timestamp: new Date().toISOString(),
     });
-    
+
     emptyCart();
   }, [emptyCart, trackEvent, totalItems, cartTotal]);
 
   // 👤 Handle User Actions with Analytics
   const handleUserLogin = useCallback(() => {
     // ✅ تتبع فتح نموذج تسجيل الدخول
-    trackEvent('login_modal_opened', {
-      source: 'navbar',
-      timestamp: new Date().toISOString()
+    trackEvent("login_modal_opened", {
+      source: "navbar",
+      timestamp: new Date().toISOString(),
     });
-    
+
     setShowAuthModal(true);
   }, [trackEvent]);
 
   const handleUserLogout = useCallback(() => {
     // ✅ تتبع تسجيل الخروج
-    trackEvent('user_logged_out', {
+    trackEvent("user_logged_out", {
       user_name: user?.name,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     logout();
   }, [logout, trackEvent, user]);
 
-  const handleUserProfileNavigation = useCallback((section) => {
-    // ✅ تتبع التنقل في ملف المستخدم
-    trackEvent('user_profile_navigation', {
-      section: section,
-      source: 'navbar_dropdown',
-      timestamp: new Date().toISOString()
-    });
-  }, [trackEvent]);
+  const handleUserProfileNavigation = useCallback(
+    (section) => {
+      // ✅ تتبع التنقل في ملف المستخدم
+      trackEvent("user_profile_navigation", {
+        section: section,
+        source: "navbar_dropdown",
+        timestamp: new Date().toISOString(),
+      });
+    },
+    [trackEvent]
+  );
 
   // 🎨 Navbar Styles
   const navbarStyle = {
@@ -467,18 +475,18 @@ export default function ModernNavbar() {
 
   // أيقونة السلة الشفافة ذات الحواف البيضاء
   const CartIcon = () => (
-    <motion.div 
-      animate={hoverCart ? { scale: [1, 1.1, 1] } : {}} 
-      transition={{ duration: 0.4 }} 
-      className="d-inline-block" 
+    <motion.div
+      animate={hoverCart ? { scale: [1, 1.1, 1] } : {}}
+      transition={{ duration: 0.4 }}
+      className="d-inline-block"
       onMouseEnter={() => {
         setHoverCart(true);
         // ✅ تتبع عرض dropdown السلة
-        trackEvent('cart_dropdown_opened', {
+        trackEvent("cart_dropdown_opened", {
           cart_items_count: totalItems,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-      }} 
+      }}
       onMouseLeave={() => setHoverCart(false)}
     >
       <div
@@ -512,7 +520,7 @@ export default function ModernNavbar() {
           }}
         />
       </div>
-      
+
       {totalItems > 0 && (
         <span
           className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -541,15 +549,15 @@ export default function ModernNavbar() {
     <nav className="navbar navbar-expand-lg shadow sticky-top py-2" style={navbarStyle}>
       <div className="container-fluid">
         {/* Logo */}
-        <Link 
-          className="navbar-brand fw-bold fs-3 me-4 text-white d-flex align-items-center" 
-          to="/" 
+        <Link
+          className="navbar-brand fw-bold fs-3 me-4 text-white d-flex align-items-center"
+          to="/"
           style={{ textDecoration: "none" }}
           onClick={() => {
             // ✅ تتبع النقر على الشعار
-            trackEvent('logo_click', {
-              source: 'navbar',
-              timestamp: new Date().toISOString()
+            trackEvent("logo_click", {
+              source: "navbar",
+              timestamp: new Date().toISOString(),
             });
           }}
         >
@@ -560,17 +568,17 @@ export default function ModernNavbar() {
         </Link>
 
         {/* Mobile Toggle */}
-        <button 
-          className="navbar-toggler border-0" 
-          type="button" 
+        <button
+          className="navbar-toggler border-0"
+          type="button"
           onClick={() => {
             setMobileMenuOpen(!mobileMenuOpen);
             // ✅ تتبع فتح/إغلاق القائمة المتنقلة
-            trackEvent('mobile_menu_toggled', {
-              action: mobileMenuOpen ? 'close' : 'open',
-              timestamp: new Date().toISOString()
+            trackEvent("mobile_menu_toggled", {
+              action: mobileMenuOpen ? "close" : "open",
+              timestamp: new Date().toISOString(),
             });
-          }} 
+          }}
           style={{ background: "transparent" }}
         >
           <motion.div animate={mobileMenuOpen ? { rotate: 90 } : { rotate: 0 }} transition={{ duration: 0.3 }}>
@@ -601,10 +609,10 @@ export default function ModernNavbar() {
                     onClick={() => {
                       setHoverMega(!hoverMega);
                       // ✅ تتبع فتح القائمة الميجا
-                      trackEvent('mega_menu_toggled', {
-                        action: hoverMega ? 'close' : 'open',
-                        source: 'navbar_button',
-                        timestamp: new Date().toISOString()
+                      trackEvent("mega_menu_toggled", {
+                        action: hoverMega ? "close" : "open",
+                        source: "navbar_button",
+                        timestamp: new Date().toISOString(),
                       });
                     }}
                     onMouseEnter={() => setHoverMega(true)}
@@ -629,9 +637,9 @@ export default function ModernNavbar() {
                         setShowPopularSearches(true);
                       }
                       // ✅ تتبع تركيز حقل البحث
-                      trackEvent('search_input_focused', {
+                      trackEvent("search_input_focused", {
                         has_search_term: !!searchTerm.trim(),
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
                       });
                     }}
                     onKeyDown={handleKeyDown}
@@ -670,17 +678,17 @@ export default function ModernNavbar() {
                         justifyContent: "center",
                         borderRadius: "50%",
                       }}
-                      whileHover={{ 
+                      whileHover={{
                         scale: 1.1,
-                        background: darkMode ? "rgba(148, 163, 184, 0.1)" : "rgba(100, 116, 139, 0.1)"
+                        background: darkMode ? "rgba(148, 163, 184, 0.1)" : "rgba(100, 116, 139, 0.1)",
                       }}
                       onClick={() => {
                         setSearchTerm("");
                         inputRef.current?.focus();
                         // ✅ تتبع مسح حقل البحث
-                        trackEvent('search_input_cleared', {
+                        trackEvent("search_input_cleared", {
                           previous_term_length: searchTerm.length,
-                          timestamp: new Date().toISOString()
+                          timestamp: new Date().toISOString(),
                         });
                       }}
                     >
@@ -689,7 +697,8 @@ export default function ModernNavbar() {
                   )}
 
                   {/* Search Icon inside input */}
-                  <div className="position-absolute"
+                  <div
+                    className="position-absolute"
                     style={{
                       right: "15px",
                       top: "50%",
@@ -733,11 +742,7 @@ export default function ModernNavbar() {
                                   <FaHistory size={12} />
                                   Recent Searches
                                 </div>
-                                <button 
-                                  className="btn btn-sm p-0 text-decoration-none" 
-                                  style={{ color: darkMode ? "#94a3b8" : "#64748b" }} 
-                                  onClick={clearSearchHistory}
-                                >
+                                <button className="btn btn-sm p-0 text-decoration-none" style={{ color: darkMode ? "#94a3b8" : "#64748b" }} onClick={clearSearchHistory}>
                                   <small>Clear</small>
                                 </button>
                               </div>
@@ -1056,9 +1061,9 @@ export default function ModernNavbar() {
                           whileHover={{ scale: 1.05 }}
                           onClick={() => {
                             // ✅ تتبع النقر على عرض جميع المنتجات
-                            trackEvent('view_all_products_click', {
-                              source: 'mega_menu_footer',
-                              timestamp: new Date().toISOString()
+                            trackEvent("view_all_products_click", {
+                              source: "mega_menu_footer",
+                              timestamp: new Date().toISOString(),
                             });
                             navigate("/products");
                             setHoverMega(false);
@@ -1103,15 +1108,15 @@ export default function ModernNavbar() {
 
             {/* Wishlist */}
             <li className="nav-item position-relative">
-              <motion.div 
-                whileHover={{ scale: 1.1 }} 
+              <motion.div
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => {
                   // ✅ تتبع النقر على المفضلة
-                  trackEvent('wishlist_icon_click', {
+                  trackEvent("wishlist_icon_click", {
                     wishlist_count: getWishlistCount(),
-                    source: 'navbar',
-                    timestamp: new Date().toISOString()
+                    source: "navbar",
+                    timestamp: new Date().toISOString(),
                   });
                 }}
               >
@@ -1184,11 +1189,7 @@ export default function ModernNavbar() {
                         Shopping Cart ({totalItems})
                       </h6>
                       {items.length > 0 && (
-                        <button 
-                          className="btn btn-sm btn-outline-danger" 
-                          onClick={handleClearCart} 
-                          style={{ fontSize: "0.8rem" }}
-                        >
+                        <button className="btn btn-sm btn-outline-danger" onClick={handleClearCart} style={{ fontSize: "0.8rem" }}>
                           Clear All
                         </button>
                       )}
@@ -1252,19 +1253,19 @@ export default function ModernNavbar() {
                                 {/* Quantity Controls */}
                                 <div className="d-flex align-items-center justify-content-between mb-2">
                                   <div className="d-flex align-items-center gap-2">
-                                    <button 
-                                      className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" 
-                                      style={{ width: "24px", height: "24px", padding: 0 }} 
+                                    <button
+                                      className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                                      style={{ width: "24px", height: "24px", padding: 0 }}
                                       onClick={() => {
                                         updateItemQuantity(item.id, item.quantity - 1);
                                         // ✅ تتبع تقليل الكمية
-                                        trackEvent('cart_quantity_decreased', {
+                                        trackEvent("cart_quantity_decreased", {
                                           product_id: item.id,
                                           product_name: item.title,
                                           new_quantity: item.quantity - 1,
-                                          timestamp: new Date().toISOString()
+                                          timestamp: new Date().toISOString(),
                                         });
-                                      }} 
+                                      }}
                                       disabled={item.quantity <= 1}
                                     >
                                       −
@@ -1280,17 +1281,17 @@ export default function ModernNavbar() {
                                     >
                                       {item.quantity}
                                     </span>
-                                    <button 
-                                      className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" 
-                                      style={{ width: "24px", height: "24px", padding: 0 }} 
+                                    <button
+                                      className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                                      style={{ width: "24px", height: "24px", padding: 0 }}
                                       onClick={() => {
                                         updateItemQuantity(item.id, item.quantity + 1);
                                         // ✅ تتبع زيادة الكمية
-                                        trackEvent('cart_quantity_increased', {
+                                        trackEvent("cart_quantity_increased", {
                                           product_id: item.id,
                                           product_name: item.title,
                                           new_quantity: item.quantity + 1,
-                                          timestamp: new Date().toISOString()
+                                          timestamp: new Date().toISOString(),
                                         });
                                       }}
                                     >
@@ -1321,11 +1322,11 @@ export default function ModernNavbar() {
                                 onClick={() => {
                                   removeItem(item.id);
                                   // ✅ تتبع إزالة العنصر من السلة
-                                  trackEvent('cart_item_removed', {
+                                  trackEvent("cart_item_removed", {
                                     product_id: item.id,
                                     product_name: item.title,
                                     removed_quantity: item.quantity,
-                                    timestamp: new Date().toISOString()
+                                    timestamp: new Date().toISOString(),
                                   });
                                 }}
                               >
@@ -1400,9 +1401,9 @@ export default function ModernNavbar() {
                           className="btn"
                           onClick={() => {
                             // ✅ تتبع البدء في التسوق من السلة الفارغة
-                            trackEvent('start_shopping_from_empty_cart', {
-                              source: 'navbar_cart_dropdown',
-                              timestamp: new Date().toISOString()
+                            trackEvent("start_shopping_from_empty_cart", {
+                              source: "navbar_cart_dropdown",
+                              timestamp: new Date().toISOString(),
                             });
                             navigate("/products");
                             setHoverCart(false);
@@ -1456,7 +1457,7 @@ export default function ModernNavbar() {
                         style={{
                           color: darkMode ? "#e2e8f0" : "#1e293b",
                         }}
-                        onClick={() => handleUserProfileNavigation('profile')}
+                        onClick={() => handleUserProfileNavigation("profile")}
                       >
                         👤 Profile
                       </Link>
@@ -1468,7 +1469,7 @@ export default function ModernNavbar() {
                         style={{
                           color: darkMode ? "#e2e8f0" : "#1e293b",
                         }}
-                        onClick={() => handleUserProfileNavigation('orders')}
+                        onClick={() => handleUserProfileNavigation("orders")}
                       >
                         📦 Orders
                       </Link>
@@ -1480,7 +1481,7 @@ export default function ModernNavbar() {
                         style={{
                           color: darkMode ? "#e2e8f0" : "#1e293b",
                         }}
-                        onClick={() => handleUserProfileNavigation('wishlist')}
+                        onClick={() => handleUserProfileNavigation("wishlist")}
                       >
                         ❤️ Wishlist
                       </Link>
@@ -1489,10 +1490,7 @@ export default function ModernNavbar() {
                       <hr className="dropdown-divider" />
                     </li>
                     <li>
-                      <button 
-                        className="dropdown-item d-flex align-items-center gap-2 text-danger" 
-                        onClick={handleUserLogout}
-                      >
+                      <button className="dropdown-item d-flex align-items-center gap-2 text-danger" onClick={handleUserLogout}>
                         🚪 Sign Out
                       </button>
                     </li>
@@ -1607,6 +1605,25 @@ export default function ModernNavbar() {
         .cart-icon-container:hover {
           transform: scale(1.05);
         }
+
+        .btn-signup {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        }
+
+        .btn-signup:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .navbar-nav {
+        overflow: visible !important;
+        }
+
+        .mega-menu a:hover {
+        background-color: rgba(0,123,255,0.1);
+        }
+
       `}</style>
     </nav>
   );

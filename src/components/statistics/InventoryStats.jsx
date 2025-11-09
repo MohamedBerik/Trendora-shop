@@ -1,5 +1,4 @@
-// components/statistics/InventoryStats.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FaBox, 
@@ -8,15 +7,14 @@ import {
   FaCheck, 
   FaSortAmountDown,
   FaSearch,
-  FaSync,
-  FaDownload
+  FaSync
 } from 'react-icons/fa';
 import StatisticsModal from '../ui/StatisticsModal';
 import ConfirmModal from '../ui/ConfirmModal';
 import Button from '../ui/Button';
 import { formatNumber, formatCurrency } from '../../utils/formatters';
 
-const InventoryStats = ({ data, dateRange }) => {
+const InventoryStats = ({ data }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);

@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dropdown } from 'react-bootstrap';
 import { useLanguage } from '../../context/LanguageContext';
 import { FaGlobe, FaCheck, FaSpinner } from 'react-icons/fa';
 import './LanguageSwitcher.css';

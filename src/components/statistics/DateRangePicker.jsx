@@ -1,5 +1,4 @@
-// components/statistics/DateRangePicker.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
 
 const DateRangePicker = ({ value, onChange }) => {

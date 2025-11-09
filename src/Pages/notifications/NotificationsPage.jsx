@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { Bell, CheckCheck, Trash2, ShoppingCart, Gift, Truck, Settings, Shield } from 'lucide-react';

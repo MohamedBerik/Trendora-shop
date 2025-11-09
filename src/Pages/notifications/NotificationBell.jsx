@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { Bell, X, ShoppingCart, Gift, Truck, Settings, Shield, CheckCheck } from 'lucide-react';
@@ -117,18 +117,18 @@ const NotificationBell = ({ darkMode = false }) => {
                   {unreadCount > 0 && (
                     <Button
                       variant="link"
-                      size="sm"
-                      className="text-primary p-0"
+                      size="lg"
+                      className="text-light p-0"
                       onClick={markAllAsRead}
                       title="تعيين الكل كمقروء"
                     >
-                      <CheckCheck size={14} />
+                      <CheckCheck size={20} />
                     </Button>
                   )}
                   <Button
                     variant="link"
-                    size="sm"
-                    className="text-danger p-0"
+                    size="lg"
+                    className="text-light p-0"
                     onClick={() => setShowDropdown(false)}
                     title="إغلاق"
                   >

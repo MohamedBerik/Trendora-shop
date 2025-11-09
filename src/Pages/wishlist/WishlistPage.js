@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "react-use-cart";
 import { useWishlist } from "../../context/WishlistContext";
@@ -9,22 +9,16 @@ import {
   FaTrash,
   FaSearch,
   FaFilter,
-  FaTimes,
   FaEye,
   FaStar,
   FaRegHeart,
   FaPlus,
-  FaArrowRight,
   FaShoppingBag,
   FaRegStar,
   FaCheckCircle,
   FaExclamationTriangle,
   FaClock,
-  FaChartLine,
-  FaSortAmountDown,
-  FaShare,
-  FaDownload,
-  FaSync
+  FaDownload
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -36,10 +30,9 @@ function WishlistPage() {
     removeFromWishlist,
     updateNote,
     updatePriority,
-    isInWishlist,
     clearWishlist
   } = useWishlist();
-  
+ 
   // استخدام هوك التحليلات الموحد
   const {
     trackEvent,
@@ -64,82 +57,154 @@ function WishlistPage() {
   const [interactionCount, setInteractionCount] = useState(0);
   const [wishlistModifications, setWishlistModifications] = useState(0);
 
-  // Get wishlist products with full product data
+  // ✅ إصلاح: جلب بيانات المفضلة بشكل آمن
   const wishlistProducts = useMemo(() => {
-    return wishlist.map(wishlistItem => ({
-      ...wishlistItem,
-      ...wishlistItem.product
-    }));
+    if (!wishlist || !Array.isArray(wishlist)) {
+      return [];
+    }
+   
+    return wishlist.map(wishlistItem => {
+      if (!wishlistItem) return null;
+     
+      return {
+        ...wishlistItem,
+        ...(wishlistItem.product || {}),
+        // ✅ إضافة قيم افتراضية آمنة
+        id: wishlistItem.id || `wishlist-${Date.now()}-${Math.random()}`,
+        productId: wishlistItem.productId || wishlistItem.id,
+        title: wishlistItem.product?.title || wishlistItem.title || 'Untitled Product',
+        price: wishlistItem.product?.price || wishlistItem.price || 0,
+        category: wishlistItem.product?.category || wishlistItem.category || 'uncategorized',
+        images: wishlistItem.product?.images || wishlistItem.images || ['/assets/img/placeholder.jpg'],
+        description: wishlistItem.product?.description || wishlistItem.description || '',
+        rating: wishlistItem.product?.rating || wishlistItem.rating || 0,
+        stock: wishlistItem.product?.stock !== undefined ? wishlistItem.product.stock : 10,
+        discountPercentage: wishlistItem.product?.discountPercentage || wishlistItem.discountPercentage || 0,
+        originalPrice: wishlistItem.product?.originalPrice || wishlistItem.originalPrice,
+        priority: wishlistItem.priority || 'medium',
+        note: wishlistItem.note || '',
+        addedDate: wishlistItem.addedDate || new Date().toISOString()
+      };
+    }).filter(Boolean); // ✅ إزالة العناصر null
   }, [wishlist]);
 
-  // Filter and sort wishlist
+  // ✅ إصلاح: التصفية والترتيب بشكل آمن
   const filteredWishlist = useMemo(() => {
-    let filtered = wishlistProducts.filter(item => {
-      const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.category?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!wishlistProducts || !Array.isArray(wishlistProducts)) {
+      return [];
+    }
 
-      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+    let filtered = wishlistProducts.filter(item => {
+      if (!item) return false;
+
+      const itemTitle = item.title || '';
+      const itemDescription = item.description || '';
+      const itemCategory = item.category || '';
+      const itemPrice = item.price || 0;
+      const itemPriority = item.priority || 'medium';
+
+      const matchesSearch = searchTerm === "" ||
+        itemTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        itemDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        itemCategory.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory = categoryFilter === "all" || itemCategory === categoryFilter;
      
-      const matchesPriority = priorityFilter === "all" || item.priority === priorityFilter;
+      const matchesPriority = priorityFilter === "all" || itemPriority === priorityFilter;
      
       const matchesPrice = priceFilter === "all" ||
-                          (priceFilter === "under50" && item.price < 50) ||
-                          (priceFilter === "50-100" && item.price >= 50 && item.price <= 100) ||
-                          (priceFilter === "over100" && item.price > 100);
+                          (priceFilter === "under50" && itemPrice < 50) ||
+                          (priceFilter === "50-100" && itemPrice >= 50 && itemPrice <= 100) ||
+                          (priceFilter === "over100" && itemPrice > 100);
 
       return matchesSearch && matchesCategory && matchesPriority && matchesPrice;
     });
 
-    // Sorting
-    switch (sortBy) {
-      case "recent":
-        filtered.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
-        break;
-      case "price-low":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "price-high":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case "name":
-        filtered.sort((a, b) => a.title?.localeCompare(b.title));
-        break;
-      case "priority":
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        filtered.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
-        break;
-      default:
-        filtered.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
+    // ✅ إصلاح: الترتيب بشكل آمن
+    try {
+      switch (sortBy) {
+        case "recent":
+          filtered.sort((a, b) => {
+            const dateA = new Date(a.addedDate || 0);
+            const dateB = new Date(b.addedDate || 0);
+            return dateB - dateA;
+          });
+          break;
+        case "price-low":
+          filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+          break;
+        case "price-high":
+          filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+          break;
+        case "name":
+          filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+          break;
+        case "priority":
+          const priorityOrder = { high: 3, medium: 2, low: 1 };
+          filtered.sort((a, b) => {
+            const priorityA = priorityOrder[a.priority] || 1;
+            const priorityB = priorityOrder[b.priority] || 1;
+            return priorityB - priorityA;
+          });
+          break;
+        default:
+          filtered.sort((a, b) => new Date(b.addedDate || 0) - new Date(a.addedDate || 0));
+      }
+    } catch (error) {
+      console.error('Error sorting wishlist:', error);
     }
 
     return filtered;
   }, [wishlistProducts, searchTerm, categoryFilter, priorityFilter, priceFilter, sortBy]);
 
-  // Extract unique categories
+  // ✅ إصلاح: استخراج الفئات بشكل آمن
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(wishlistProducts.map(item => item.category).filter(Boolean))];
+    if (!wishlistProducts || !Array.isArray(wishlistProducts)) {
+      return ["all"];
+    }
+   
+    const uniqueCategories = [...new Set(
+      wishlistProducts
+        .map(item => item?.category)
+        .filter(Boolean)
+    )];
     return ["all", ...uniqueCategories];
   }, [wishlistProducts]);
 
-  // Wishlist statistics with enhanced analytics
+  // ✅ إصلاح: إحصائيات المفضلة بشكل آمن
   const wishlistStats = useMemo(() => {
-    const total = wishlistProducts.length;
-    const totalValue = wishlistProducts.reduce((sum, item) => sum + (item.price || 0), 0);
-    const highPriority = wishlistProducts.filter(item => item.priority === "high").length;
-    const inStock = wishlistProducts.filter(item => item.stock > 0).length;
-    const withNotes = wishlistProducts.filter(item => item.note && item.note.trim()).length;
+    if (!wishlistProducts || !Array.isArray(wishlistProducts)) {
+      return {
+        total: 0,
+        totalValue: 0,
+        highPriority: 0,
+        inStock: 0,
+        withNotes: 0,
+        averagePrice: 0,
+        categoryDistribution: {},
+        priorityDistribution: {}
+      };
+    }
+
+    const validProducts = wishlistProducts.filter(item => item);
+    const total = validProducts.length;
+    const totalValue = validProducts.reduce((sum, item) => sum + (item.price || 0), 0);
+    const highPriority = validProducts.filter(item => item.priority === "high").length;
+    const inStock = validProducts.filter(item => (item.stock || 0) > 0).length;
+    const withNotes = validProducts.filter(item => item.note && item.note.trim()).length;
     const averagePrice = total > 0 ? totalValue / total : 0;
    
-    // Category distribution
-    const categoryDistribution = wishlistProducts.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + 1;
+    // توزيع الفئات
+    const categoryDistribution = validProducts.reduce((acc, item) => {
+      const category = item.category || 'uncategorized';
+      acc[category] = (acc[category] || 0) + 1;
       return acc;
     }, {});
    
-    // Priority distribution
-    const priorityDistribution = wishlistProducts.reduce((acc, item) => {
-      acc[item.priority] = (acc[item.priority] || 0) + 1;
+    // توزيع الأولويات
+    const priorityDistribution = validProducts.reduce((acc, item) => {
+      const priority = item.priority || 'medium';
+      acc[priority] = (acc[priority] || 0) + 1;
       return acc;
     }, {});
    
@@ -155,9 +220,10 @@ function WishlistPage() {
     };
   }, [wishlistProducts]);
 
-  // Check if product is in cart
+  // ✅ إصلاح: التحقق من وجود المنتج في السلة
   const isInCart = useCallback((productId) => {
-    return items.some(item => item.id == productId);
+    if (!productId || !items || !Array.isArray(items)) return false;
+    return items.some(item => item.id === productId);
   }, [items]);
 
   // 🔧 دالة مساعدة للتتبع الآمن مع النظام الموحد
@@ -181,14 +247,19 @@ function WishlistPage() {
   }, [wishlist.length, wishlistStats, trackEvent, safeTrack]);
 
   const trackProductAction = useCallback((action, product, metadata = {}) => {
+    if (!product) {
+      console.warn('Attempted to track action for undefined product');
+      return { success: false, error: 'Undefined product' };
+    }
+
     return safeTrack(trackEvent, `wishlist_${action}`, {
       product_id: product.productId || product.id,
-      product_title: product.title,
-      product_category: product.category,
-      product_price: product.price,
+      product_title: product.title || 'Unknown Product',
+      product_category: product.category || 'uncategorized',
+      product_price: product.price || 0,
       wishlist_context: {
         current_wishlist_size: wishlist.length,
-        item_priority: product.priority,
+        item_priority: product.priority || 'medium',
         has_note: !!(product.note && product.note.trim())
       },
       ...metadata
@@ -210,7 +281,7 @@ function WishlistPage() {
         notes_usage: wishlistStats.withNotes
       }
     });
-    
+   
     // تتبع عرض المفضلة كحدث منفصل
     safeTrack(trackEvent, 'wishlist_page_view', {
       session_start_time: startTime,
@@ -237,20 +308,27 @@ function WishlistPage() {
         });
       }
     };
-  }, [wishlist.length, wishlistStats, trackPageView, trackEvent, safeTrack]);
+  }, [wishlist.length, wishlistStats, trackPageView, trackEvent, safeTrack, interactionCount, wishlistModifications]);
 
-  // Handlers
+  // ✅ إصلاح: معالجات الأحداث بشكل آمن
   const handleRemoveFromWishlist = useCallback((wishlistId, product, e) => {
     e?.stopPropagation();
    
+    if (!wishlistId) {
+      console.error('Cannot remove item: missing wishlistId');
+      return;
+    }
+
     // تتبع إزالة المنتج من المفضلة
-    trackProductAction('remove', product, {
-      removal_context: {
-        time_on_page: Date.now() - (pageViewStartTime || Date.now()),
-        total_interactions: interactionCount + 1,
-        was_selected: selectedItems.has(wishlistId)
-      }
-    });
+    if (product) {
+      trackProductAction('remove', product, {
+        removal_context: {
+          time_on_page: Date.now() - (pageViewStartTime || Date.now()),
+          total_interactions: interactionCount + 1,
+          was_selected: selectedItems.has(wishlistId)
+        }
+      });
+    }
    
     removeFromWishlist(wishlistId);
     setSelectedItems(prev => {
@@ -265,12 +343,23 @@ function WishlistPage() {
   const addToCartFromWishlist = useCallback((product, e) => {
     e?.stopPropagation();
    
+    if (!product) {
+      console.error('Cannot add to cart: missing product');
+      return;
+    }
+
+    const productId = product.productId || product.id;
+    if (!productId) {
+      console.error('Cannot add to cart: missing product ID');
+      return;
+    }
+
     // تتبع إضافة المنتج إلى السلة من المفضلة
     trackProductAction('add_to_cart', product, {
       from_wishlist: true,
       conversion_context: {
-        time_in_wishlist: Date.now() - new Date(product.addedDate),
-        wishlist_priority: product.priority,
+        time_in_wishlist: Date.now() - new Date(product.addedDate || Date.now()),
+        wishlist_priority: product.priority || 'medium',
         had_note: !!(product.note && product.note.trim())
       }
     });
@@ -279,40 +368,50 @@ function WishlistPage() {
     safeTrack(trackAddToCart, product, 1, {
       source: 'wishlist_page',
       wishlist_metrics: {
-        priority: product.priority,
-        time_in_wishlist: Date.now() - new Date(product.addedDate),
+        priority: product.priority || 'medium',
+        time_in_wishlist: Date.now() - new Date(product.addedDate || Date.now()),
         had_note: !!(product.note && product.note.trim())
       }
     });
    
     addItem({
-      ...product,
-      id: product.productId || product.id
+      id: productId,
+      name: product.title || 'Unknown Product',
+      price: product.price || 0,
+      quantity: 1,
+      image: product.images?.[0] || '/assets/img/placeholder.jpg',
+      category: product.category || 'uncategorized'
     });
     setInteractionCount(prev => prev + 1);
   }, [addItem, trackProductAction, trackAddToCart, safeTrack]);
 
   const toggleSelectItem = useCallback((wishlistId, product) => {
+    if (!wishlistId) return;
+
     setSelectedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(wishlistId)) {
         newSet.delete(wishlistId);
         // تتبع إلغاء تحديد المنتج
-        trackProductAction('deselect', product, {
-          selection_context: {
-            total_selected: newSet.size,
-            selection_duration: Date.now() - (pageViewStartTime || Date.now())
-          }
-        });
+        if (product) {
+          trackProductAction('deselect', product, {
+            selection_context: {
+              total_selected: newSet.size,
+              selection_duration: Date.now() - (pageViewStartTime || Date.now())
+            }
+          });
+        }
       } else {
         newSet.add(wishlistId);
         // تتبع تحديد المنتج
-        trackProductAction('select', product, {
-          selection_context: {
-            total_selected: newSet.size,
-            selection_duration: Date.now() - (pageViewStartTime || Date.now())
-          }
-        });
+        if (product) {
+          trackProductAction('select', product, {
+            selection_context: {
+              total_selected: newSet.size,
+              selection_duration: Date.now() - (pageViewStartTime || Date.now())
+            }
+          });
+        }
       }
       return newSet;
     });
@@ -320,6 +419,8 @@ function WishlistPage() {
   }, [trackProductAction, pageViewStartTime]);
 
   const selectAllItems = useCallback(() => {
+    if (!filteredWishlist || !Array.isArray(filteredWishlist)) return;
+
     if (selectedItems.size === filteredWishlist.length) {
       setSelectedItems(new Set());
       // تتبع إلغاء تحديد الكل
@@ -327,38 +428,42 @@ function WishlistPage() {
         previous_selection_count: selectedItems.size
       });
     } else {
-      setSelectedItems(new Set(filteredWishlist.map(item => item.id)));
+      const validIds = filteredWishlist
+        .map(item => item?.id)
+        .filter(Boolean);
+      setSelectedItems(new Set(validIds));
       // تتبع تحديد الكل
       trackWishlistAction('select_all', {
         items_count: filteredWishlist.length,
-        selection_value: filteredWishlist.reduce((sum, item) => sum + item.price, 0)
+        selection_value: filteredWishlist.reduce((sum, item) => sum + (item?.price || 0), 0)
       });
     }
     setInteractionCount(prev => prev + 1);
   }, [filteredWishlist, selectedItems.size, trackWishlistAction]);
 
   const removeSelectedItems = useCallback(() => {
+    if (!selectedItems.size) return;
+
     // تتبع إزالة العناصر المحددة
+    const selectedProducts = filteredWishlist.filter(item => item && selectedItems.has(item.id));
+   
     trackWishlistAction('remove_selected', {
       items_count: selectedItems.size,
-      total_value: filteredWishlist
-        .filter(item => selectedItems.has(item.id))
-        .reduce((sum, item) => sum + item.price, 0),
+      total_value: selectedProducts.reduce((sum, item) => sum + (item?.price || 0), 0),
       selection_analysis: {
-        priority_breakdown: filteredWishlist
-          .filter(item => selectedItems.has(item.id))
-          .reduce((acc, item) => {
-            acc[item.priority] = (acc[item.priority] || 0) + 1;
-            return acc;
-          }, {}),
-        categories_removed: [...new Set(filteredWishlist
-          .filter(item => selectedItems.has(item.id))
-          .map(item => item.category))]
+        priority_breakdown: selectedProducts.reduce((acc, item) => {
+          const priority = item?.priority || 'medium';
+          acc[priority] = (acc[priority] || 0) + 1;
+          return acc;
+        }, {}),
+        categories_removed: [...new Set(selectedProducts
+          .map(item => item?.category)
+          .filter(Boolean))]
       }
     });
    
     selectedItems.forEach(id => {
-      const product = wishlistProducts.find(item => item.id === id);
+      const product = wishlistProducts.find(item => item && item.id === id);
       if (product) {
         trackProductAction('remove', product, {
           bulk: true,
@@ -373,8 +478,10 @@ function WishlistPage() {
   }, [selectedItems, removeFromWishlist, wishlistProducts, filteredWishlist, trackWishlistAction, trackProductAction]);
 
   const addSelectedToCart = useCallback(() => {
-    const selectedProducts = filteredWishlist.filter(item => selectedItems.has(item.id));
-    const totalValue = selectedProducts.reduce((sum, item) => sum + item.price, 0);
+    if (!selectedItems.size) return;
+
+    const selectedProducts = filteredWishlist.filter(item => item && selectedItems.has(item.id));
+    const totalValue = selectedProducts.reduce((sum, item) => sum + (item?.price || 0), 0);
    
     // تتبع إضافة العناصر المحددة إلى السلة
     trackWishlistAction('add_selected_to_cart', {
@@ -383,29 +490,36 @@ function WishlistPage() {
       conversion_analysis: {
         average_item_value: totalValue / selectedItems.size,
         priority_distribution: selectedProducts.reduce((acc, item) => {
-          acc[item.priority] = (acc[item.priority] || 0) + 1;
+          const priority = item?.priority || 'medium';
+          acc[priority] = (acc[priority] || 0) + 1;
           return acc;
         }, {}),
-        categories_added: [...new Set(selectedProducts.map(item => item.category))]
+        categories_added: [...new Set(selectedProducts.map(item => item?.category).filter(Boolean))]
       }
     });
    
     selectedProducts.forEach(product => {
-      addToCartFromWishlist(product);
+      if (product) {
+        addToCartFromWishlist(product);
+      }
     });
     setInteractionCount(prev => prev + 1);
   }, [filteredWishlist, selectedItems, addToCartFromWishlist, trackWishlistAction]);
 
   const handleUpdatePriority = useCallback((wishlistId, priority, product) => {
+    if (!wishlistId) return;
+
     // تتبع تحديث الأولوية
-    trackProductAction('update_priority', product, {
-      old_priority: product.priority,
-      new_priority: priority,
-      update_context: {
-        time_on_page: Date.now() - (pageViewStartTime || Date.now()),
-        interaction_sequence: interactionCount + 1
-      }
-    });
+    if (product) {
+      trackProductAction('update_priority', product, {
+        old_priority: product.priority || 'medium',
+        new_priority: priority,
+        update_context: {
+          time_on_page: Date.now() - (pageViewStartTime || Date.now()),
+          interaction_sequence: interactionCount + 1
+        }
+      });
+    }
    
     updatePriority(wishlistId, priority);
     setInteractionCount(prev => prev + 1);
@@ -413,12 +527,16 @@ function WishlistPage() {
   }, [updatePriority, trackProductAction, pageViewStartTime, interactionCount]);
 
   const handleUpdateNote = useCallback((wishlistId, note, product) => {
+    if (!wishlistId) return;
+
     // تتبع تحديث الملاحظة
-    trackProductAction('update_note', product, {
-      note_length: note?.length || 0,
-      had_previous_note: !!(product.note && product.note.trim()),
-      update_type: note ? (product.note ? 'updated' : 'added') : 'removed'
-    });
+    if (product) {
+      trackProductAction('update_note', product, {
+        note_length: note?.length || 0,
+        had_previous_note: !!(product.note && product.note.trim()),
+        update_type: note ? (product.note ? 'updated' : 'added') : 'removed'
+      });
+    }
    
     updateNote(wishlistId, note);
     setShowNoteModal(null);
@@ -466,23 +584,26 @@ function WishlistPage() {
     setInteractionCount(prev => prev + 1);
   }, [searchTerm, categoryFilter, priorityFilter, priceFilter, sortBy, trackWishlistAction, pageViewStartTime]);
 
+  // ✅ دالة handleProductClick - الآن مستخدمة في الكود
   const handleProductClick = useCallback((productId, product, e) => {
+    if (!productId || !product) return;
+
     if (!e.target.closest('button') && !e.target.closest('a')) {
       // تتبع النقر على المنتج للذهاب إلى صفحة المنتج
       trackProductAction('click_through', product, {
         navigation_context: {
-          time_in_wishlist: Date.now() - new Date(product.addedDate),
-          wishlist_priority: product.priority,
+          time_in_wishlist: Date.now() - new Date(product.addedDate || Date.now()),
+          wishlist_priority: product.priority || 'medium',
           had_note: !!(product.note && product.note.trim())
         }
       });
-     
+ 
       // استخدام دالة trackProductView من النظام الموحد
       safeTrack(trackProductView, product, {
         source: 'wishlist_page',
         wishlist_context: {
-          time_in_wishlist: Date.now() - new Date(product.addedDate),
-          priority: product.priority
+          time_in_wishlist: Date.now() - new Date(product.addedDate || Date.now()),
+          priority: product.priority || 'medium'
         }
       });
      
@@ -491,6 +612,8 @@ function WishlistPage() {
   }, [navigate, trackProductAction, trackProductView, safeTrack]);
 
   const handleQuickView = useCallback((product) => {
+    if (!product) return;
+
     // تتبع العرض السريع
     trackProductAction('quick_view', product, {
       view_context: {
@@ -549,39 +672,67 @@ function WishlistPage() {
     setInteractionCount(prev => prev + 1);
   }, [searchTerm, categoryFilter, priorityFilter, priceFilter, sortBy, trackWishlistAction]);
 
-  // تتبع تصدير المفضلة
+  // ✅ إصلاح: تصدير المفضلة - هذا هو الجزء الذي كان يسبب الخطأ
   const handleExportWishlist = useCallback(() => {
-    const exportData = {
-      exported_at: new Date().toISOString(),
-      total_items: wishlist.length,
-      total_value: wishlistStats.totalValue,
-      items: wishlist.map(item => ({
-        title: item.product.title,
-        category: item.product.category,
-        price: item.product.price,
-        priority: item.priority,
-        note: item.note,
-        added_date: item.addedDate,
-        in_stock: item.product.stock > 0
-      }))
-    };
+    try {
+      // ✅ التحقق من وجود البيانات قبل التصدير
+      if (!wishlist || !Array.isArray(wishlist) || wishlist.length === 0) {
+        alert('No items to export');
+        return;
+      }
 
-    // تتبع تصدير المفضلة
-    trackWishlistAction('export', {
-      items_count: wishlist.length,
-      export_format: 'json',
-      data_size: JSON.stringify(exportData).length
-    });
+      const exportData = {
+        exported_at: new Date().toISOString(),
+        total_items: wishlist.length,
+        total_value: wishlistStats.totalValue,
+        items: wishlist.map(item => {
+          // ✅ التحقق من وجود كل عنصر وخصائصه
+          if (!item) return null;
+         
+          const product = item.product || {};
+          return {
+            title: product.title || item.title || 'Untitled Product',
+            category: product.category || item.category || 'uncategorized',
+            price: product.price || item.price || 0,
+            priority: item.priority || 'medium',
+            note: item.note || '',
+            added_date: item.addedDate || new Date().toISOString(),
+            in_stock: (product.stock || 0) > 0
+          };
+        }).filter(Boolean) // ✅ إزالة العناصر null
+      };
 
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `wishlist-export-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    setInteractionCount(prev => prev + 1);
-  }, [wishlist, wishlistStats, trackWishlistAction]);
+      // ✅ التحقق من وجود عناصر للتصدير
+      if (exportData.items.length === 0) {
+        alert('No valid items to export');
+        return;
+      }
+
+      // تتبع تصدير المفضلة
+      trackWishlistAction('export', {
+        items_count: exportData.items.length,
+        export_format: 'json',
+        data_size: JSON.stringify(exportData).length
+      });
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `wishlist-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+     
+      setInteractionCount(prev => prev + 1);
+    } catch (error) {
+      console.error('Error exporting wishlist:', error);
+      alert('Error exporting wishlist. Please try again.');
+      trackError('export_error', error.message, 'WishlistPage');
+    }
+  }, [wishlist, wishlistStats, trackWishlistAction, trackError]);
 
   // Priority badge component
   const PriorityBadge = ({ priority }) => {
@@ -591,7 +742,7 @@ function WishlistPage() {
       low: { class: "bg-secondary", text: "Low", icon: FaRegStar }
     };
 
-    const { class: badgeClass, text, icon: Icon } = config[priority] || config.low;
+    const { class: badgeClass, text, icon: Icon } = config[priority] || config.medium;
 
     return (
       <span className={`badge ${badgeClass} priority-badge`}>
@@ -603,7 +754,13 @@ function WishlistPage() {
 
   // Wishlist item component
   const WishlistItem = ({ item, index }) => {
+    // ✅ التحقق من وجود العنصر
+    if (!item) {
+      return null;
+    }
+
     const inCart = isInCart(item.productId || item.id);
+    const productId = item.productId || item.id;
    
     return (
       <motion.div
@@ -612,7 +769,12 @@ function WishlistPage() {
         transition={{ duration: 0.5, delay: index * 0.1 }}
         className="wishlist-card-item"
       >
-        <div className={`card wishlist-item border-0 shadow-sm h-100 ${selectedItems.has(item.id) ? 'selected' : ''}`}>
+        {/* ✅ أضف onClick هنا للكارد الرئيسي */}
+        <div 
+          className={`card wishlist-item border-0 shadow-sm h-100 ${selectedItems.has(item.id) ? 'selected' : ''}`}
+          onClick={(e) => handleProductClick(productId, item, e)}
+          style={{ cursor: 'pointer' }}
+        >
           {/* Selection Checkbox */}
           <div className="position-absolute top-0 start-0 m-3">
             <div className="form-check">
@@ -620,7 +782,10 @@ function WishlistPage() {
                 className="form-check-input"
                 type="checkbox"
                 checked={selectedItems.has(item.id)}
-                onChange={() => toggleSelectItem(item.id, item)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  toggleSelectItem(item.id, item);
+                }}
               />
             </div>
           </div>
@@ -655,7 +820,10 @@ function WishlistPage() {
               <div className="btn-group">
                 <button
                   className="btn btn-light btn-sm rounded-circle"
-                  onClick={() => handleQuickView(item)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickView(item);
+                  }}
                   title="Quick View"
                 >
                   <FaEye />
@@ -669,7 +837,10 @@ function WishlistPage() {
                 </button>
                 <button
                   className="btn btn-light btn-sm rounded-circle"
-                  onClick={() => setShowNoteModal(item)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowNoteModal(item);
+                  }}
                   title="Add Note"
                 >
                   <FaPlus />
@@ -678,7 +849,7 @@ function WishlistPage() {
             </div>
 
             {/* Discount Badge */}
-            {item.discountPercentage > 0 && (
+            {(item.discountPercentage || 0) > 0 && (
               <span className="position-absolute top-0 start-0 m-2 badge bg-danger">
                 -{Math.round(item.discountPercentage)}%
               </span>
@@ -701,13 +872,17 @@ function WishlistPage() {
 
             {/* Title */}
             <h6 className="card-title fw-semibold mb-2 flex-grow-1 wishlist-title">
-              <Link
-                to={`/singleproduct/${item.productId || item.id}`}
+              {/* ✅ استخدم span مع onClick بدل Link */}
+              <span 
                 className="text-decoration-none text-dark"
-                onClick={() => trackProductAction('click_through', item)}
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleProductClick(productId, item, e);
+                }}
               >
                 {item.title}
-              </Link>
+              </span>
             </h6>
 
             {/* Rating */}
@@ -739,7 +914,7 @@ function WishlistPage() {
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div>
                 <span className="h5 fw-bold text-primary mb-0">
-                  ${item.price}
+                  ${item.price || 0}
                 </span>
                 {item.originalPrice && (
                   <span className="text-muted text-decoration-line-through small ms-2">
@@ -747,8 +922,8 @@ function WishlistPage() {
                   </span>
                 )}
               </div>
-              <small className={`${item.stock > 0 ? 'text-success' : 'text-danger'}`}>
-                {item.stock > 0 ? `${item.stock} in stock` : 'Out of stock'}
+              <small className={`${(item.stock || 0) > 0 ? 'text-success' : 'text-danger'}`}>
+                {(item.stock || 0) > 0 ? `${item.stock} in stock` : 'Out of stock'}
               </small>
             </div>
 
@@ -826,15 +1001,15 @@ function WishlistPage() {
                 <div className="row">
                   <div className="col-md-6">
                     <img
-                      src={quickView.images?.[0]}
+                      src={quickView.images?.[0] || "/assets/img/placeholder.jpg"}
                       alt={quickView.title}
                       className="img-fluid rounded"
                       style={{ height: '300px', objectFit: 'cover', width: '100%' }}
                     />
                   </div>
                   <div className="col-md-6">
-                    <h4 className="text-primary">${quickView.price}</h4>
-                    {quickView.discountPercentage > 0 && (
+                    <h4 className="text-primary">${quickView.price || 0}</h4>
+                    {(quickView.discountPercentage || 0) > 0 && (
                       <div className="mb-2">
                         <span className="text-muted text-decoration-line-through me-2">
                           ${quickView.originalPrice}
@@ -891,13 +1066,16 @@ function WishlistPage() {
                         <FaShoppingCart className="me-2" />
                         {isInCart(quickView.productId || quickView.id) ? 'In Cart' : 'Add to Cart'}
                       </button>
-                      <Link
-                        to={`/singleproduct/${quickView.productId || quickView.id}`}
+                      {/* ✅ استخدم button بدل Link */}
+                      <button
                         className="btn btn-outline-primary"
-                        onClick={() => setQuickView(null)}
+                        onClick={(e) => {
+                          setQuickView(null);
+                          handleProductClick(quickView.productId || quickView.id, quickView, e);
+                        }}
                       >
                         View Details
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1434,6 +1612,7 @@ function WishlistPage() {
           transition: all 0.3s ease;
           border-radius: 15px;
           overflow: hidden;
+          cursor: pointer;
         }
 
         .wishlist-item:hover {
@@ -1471,6 +1650,14 @@ function WishlistPage() {
           text-overflow: ellipsis;
           line-height: 1.4;
           height: 2.8em;
+        }
+
+        .wishlist-title span {
+          transition: color 0.3s ease;
+        }
+
+        .wishlist-title span:hover {
+          color: #667eea !important;
         }
 
         .priority-badge {

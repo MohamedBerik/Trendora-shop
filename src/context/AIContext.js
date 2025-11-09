@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import { createContext, useContext, useReducer, useCallback } from 'react';
 import { mockAIService } from '../services/mockAIService';
 
 const AIContext = createContext();

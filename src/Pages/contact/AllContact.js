@@ -9,7 +9,6 @@ import {
   FaComment,
   FaPhone,
   FaMapMarkerAlt,
-  FaClock,
   FaWhatsapp,
   FaFacebook,
   FaTwitter,

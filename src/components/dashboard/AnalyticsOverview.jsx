@@ -1,12 +1,8 @@
-// components/dashboard/AnalyticsOverview.jsx
-import React from 'react';
 import { 
   FaEye, 
   FaSearch, 
   FaShoppingCart, 
   FaDollarSign,
-  FaUsers,
-  FaChartLine,
   FaMobile,
   FaDesktop
 } from 'react-icons/fa';

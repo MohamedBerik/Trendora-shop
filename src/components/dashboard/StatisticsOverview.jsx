@@ -1,5 +1,3 @@
-// components/dashboard/StatisticsOverview.jsx
-import React from 'react';
 import { 
   FaShoppingCart, 
   FaUsers, 
@@ -7,8 +5,7 @@ import {
   FaBox,
   FaStar,
   FaArrowUp,
-  FaArrowDown,
-  FaShoppingBag
+  FaArrowDown
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
