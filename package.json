@@ -21,7 +21,6 @@
     "react-helmet-async": "^2.0.5",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.5",
-    "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
     "react-use-cart": "^1.14.0",
     "swiper": "^12.0.3"
@@ -52,6 +51,7 @@
   },
   "devDependencies": {
     "eslint-config-react-app": "^7.0.1",
+    "react-scripts": "^5.0.1",
     "source-map-explorer": "^2.5.3"
   }
 }

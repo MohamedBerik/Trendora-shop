@@ -36,8 +36,8 @@ function Checkout() {
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
   const [orderComplete, setOrderComplete] = useState(false);
-  const [setInteractionCount] = useState(0);
-  const [setStepCompletionTimes] = useState({});
+  const [interactionCount, setInteractionCount] = useState(0);
+  const [stepCompletionTimes, setStepCompletionTimes] = useState({});
   const [currentStepStartTime, setCurrentStepStartTime] = useState(Date.now());
   const [formErrors, setFormErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
