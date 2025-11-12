@@ -478,7 +478,7 @@ function Features({ onSectionView }) {
                         </div>
 
                         {/* Description مختصر */}
-                        <p
+                        {/* <p
                           className="small mb-3"
                           style={{
                             color: darkMode ? "#cbd5e0" : "#64748b",
@@ -486,7 +486,7 @@ function Features({ onSectionView }) {
                           }}
                         >
                           {quickView.description}
-                        </p>
+                        </p> */}
 
                         {/* Color Selection مضغوط */}
                         {quickView.colors && quickView.colors.length > 0 && (

@@ -67,7 +67,12 @@ const Notification = React.memo(({ type, message, onClose, duration = 4000 }) =>
       textColor: 'text-white',
       borderColor: 'border-info'
     }
-  }[type] || config.info;
+  }[type] || {
+    icon: FaInfoCircle,
+    bgColor: 'bg-info',
+    textColor: 'text-white',
+    borderColor: 'border-info'
+  };
 
   const IconComponent = config.icon;
 
@@ -106,10 +111,323 @@ const Notification = React.memo(({ type, message, onClose, duration = 4000 }) =>
   );
 });
 
+// ✅ نقل تعريف المكونات المساعدة قبل استخدامها
+const StatusBadge = React.memo(({ status, statusConfig }) => {
+  const config = statusConfig[status] || statusConfig.unknown;
+  const IconComponent = config.icon;
+ 
+  return (
+    <motion.span
+      whileHover={{ scale: 1.05 }}
+      className={`badge ${config.bgColor} text-white d-flex align-items-center shadow-sm`}
+      style={{
+        borderRadius: '20px',
+        padding: '8px 12px',
+        fontSize: '0.75rem',
+        fontWeight: '600'
+      }}
+    >
+      <IconComponent className="me-1" size={12} />
+      {config.text}
+    </motion.span>
+  );
+});
+
+// ✅ مكون بطاقة الإحصائيات المحسن
+const StatCard = React.memo(({ icon: Icon, value, label, subtext, color, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay }}
+    className="col-xl-3 col-md-6 col-6 mb-3"
+  >
+    <div className="card stat-card border-0 shadow-sm h-100">
+      <div className="card-body p-4">
+        <div className="d-flex align-items-center">
+          <div className={`stat-icon me-3 bg-${color}`}>
+            <Icon className="text-white" size={24} />
+          </div>
+          <div className="flex-grow-1">
+            <h3 className="stat-value fw-bold mb-1 text-dark">{value}</h3>
+            <p className="stat-label text-muted mb-1">{label}</p>
+            {subtext && <small className="text-muted">{subtext}</small>}
+          </div>
+        </div>
+      </div>
+    </div>
+  </motion.div>
+));
+
+// ✅ مكون بطاقة الطلب المحسن مع React.memo
+const OrderCard = React.memo(({ 
+  order, 
+  index, 
+  statusConfig, 
+  calculateOrderValues, 
+  isOrderEligibleForRating, 
+  isOrderEligibleForTracking,
+  handleQuickView,
+  handleTrackOrder,
+  handleOpenRatingModal,
+  handleDownloadInvoice,
+  generatingInvoice
+}) => {
+  const config = statusConfig[order.status] || statusConfig.unknown;
+  const items = order.items || [];
+  const orderValues = calculateOrderValues(order);
+ 
+  const canRate = isOrderEligibleForRating(order);
+  const canTrack = isOrderEligibleForTracking(order);
+ 
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="col-12 mb-4"
+    >
+      <div className="card order-card border-0 shadow-lg h-100">
+        <div className="card-header bg-white border-0 pb-0">
+          <div className="row align-items-center">
+            <div className="col-md-8">
+              <div className="d-flex align-items-center">
+                <div className="me-3">
+                  <div className="order-icon">
+                    <FaBox className="text-primary fs-4" />
+                  </div>
+                </div>
+                <div>
+                  <h5 className="mb-1 fw-bold text-dark">{order.id || "طلب غير معروف"}</h5>
+                  <small className="text-muted d-flex align-items-center">
+                    <FaCalendarAlt className="me-1" size={12} />
+                    {order.date ? new Date(order.date).toLocaleDateString('ar-SA', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : "تاريخ غير معروف"}
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4 text-md-end">
+              <div className="d-flex flex-column align-items-md-end">
+                <StatusBadge status={order.status} statusConfig={statusConfig} />
+                <div className="mt-2">
+                  <strong className="text-primary fs-4">$${orderValues.total.toFixed(2)}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+       
+        <div className="card-body">
+          {/* ✅ تبسيط عرض المنتجات */}
+          <div className="order-items mb-4">
+            <h6 className="fw-bold mb-3 d-flex align-items-center text-dark">
+              <FaShoppingBag className="me-2 text-primary" />
+              المنتجات ({items.length})
+            </h6>
+           
+            <div className="row g-2">
+              {items.slice(0, 4).map((item, itemIndex) => (
+                <div key={item.id || itemIndex} className="col-lg-3 col-md-4 col-sm-6 col-6">
+                  <div className="product-item-card border-0 bg-white rounded-3 h-100 d-flex flex-column shadow-sm p-2">
+                    <div className="product-image-container position-relative overflow-hidden rounded-top">
+                      <img
+                        src={item.image || item.images?.[0] || "/assets/img/placeholder.jpg"}
+                        alt={item.name}
+                        className="product-image w-100"
+                        style={{ height: '80px', objectFit: 'cover' }}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "/assets/img/placeholder.jpg";
+                        }}
+                      />
+                      <span className="position-absolute top-0 start-0 badge bg-dark bg-opacity-75 m-1 small">
+                        {item.quantity}x
+                      </span>
+                    </div>
+                    <div className="product-info flex-grow-1 d-flex flex-column mt-2">
+                      <h6 className="product-name fw-semibold mb-1 text-dark small text-truncate">
+                        {item.name || item.title || "منتج غير معروف"}
+                      </h6>
+                      <div className="mt-auto">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="fw-bold text-primary small">
+                            $${(item.price || 0).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {items.length > 4 && (
+                <div className="col-12 text-center mt-2">
+                  <span className="text-muted small">+ {items.length - 4} منتجات إضافية</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ✅ تبسيط ملخص الطلب */}
+          <div className="order-summary border-top pt-3">
+            <div className="row g-2">
+              <div className="col-lg-3 col-md-6 col-6">
+                <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
+                  <small className="text-muted d-block mb-1">حالة الطلب</small>
+                  <StatusBadge status={order.status} statusConfig={statusConfig} />
+                </div>
+              </div>
+             
+              <div className="col-lg-3 col-md-6 col-6">
+                <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
+                  <small className="text-muted d-block mb-1">القيمة الإجمالية</small>
+                  <strong className="text-success fs-6 d-block">
+                    $${orderValues.subtotal.toFixed(2)}
+                  </strong>
+                </div>
+              </div>
+             
+              <div className="col-lg-3 col-md-6 col-6">
+                <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
+                  <small className="text-muted d-block mb-1">الإجمالي النهائي</small>
+                  <strong className="text-primary fs-6 d-block">
+                    $${orderValues.total.toFixed(2)}
+                  </strong>
+                </div>
+              </div>
+             
+              <div className="col-lg-3 col-md-6 col-6">
+                <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
+                  <small className="text-muted d-block mb-1">طريقة الدفع</small>
+                  <strong className="text-info d-block small">
+                    {order.payment?.method || "غير محدد"}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+       
+        <div className="card-footer bg-white border-top-0 pt-0">
+          <div className="d-flex gap-2 flex-wrap justify-content-center">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn btn-primary btn-sm rounded-pill px-3"
+              onClick={() => handleQuickView(order)}
+            >
+              <FaEye className="me-1" />
+              عرض سريع
+            </motion.button>
+           
+            {canTrack && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="btn btn-info btn-sm rounded-pill px-3"
+                onClick={() => handleTrackOrder(order)}
+              >
+                <FaTruck className="me-1" />
+                تتبع الشحن
+              </motion.button>
+            )}
+
+            {canRate && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="btn btn-warning btn-sm rounded-pill px-3"
+                onClick={() => handleOpenRatingModal(order)}
+              >
+                <FaStar className="me-1" />
+                تقييم
+              </motion.button>
+            )}
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn btn-success btn-sm rounded-pill px-3"
+              onClick={() => handleDownloadInvoice(order)}
+              disabled={generatingInvoice === order.id}
+            >
+              {generatingInvoice === order.id ? (
+                <>
+                  <div className="spinner-border spinner-border-sm me-2" role="status">
+                    <span className="visually-hidden">جاري التحميل...</span>
+                  </div>
+                  جاري التحميل...
+                </>
+              ) : (
+                <>
+                  <FaDownload className="me-1" />
+                  فاتورة
+                </>
+              )}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+// ✅ نموذج تأكيد الحذف المحسن
+const ClearOrdersConfirmationModal = React.memo(({ showClearOrdersConfirm, setShowClearOrdersConfirm, handleConfirmClearOrders }) => (
+  <AnimatePresence>
+    {showClearOrdersConfirm && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="modal show d-block"
+        style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999 }}
+        onClick={() => setShowClearOrdersConfirm(false)}
+      >
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          className="modal-dialog modal-dialog-centered"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '20px' }}>
+            <div className="modal-header bg-danger text-white border-0">
+              <h5 className="modal-title mb-0 fw-bold">تأكيد الحذف</h5>
+            </div>
+            <div className="modal-body py-4 text-center">
+              <h4 className="fw-bold text-dark mb-3">حذف جميع الطلبات</h4>
+              <p className="text-muted mb-4">هل أنت متأكد من رغبتك في حذف جميع الطلبات؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            </div>
+            <div className="modal-footer border-0 bg-light">
+              <div className="d-flex gap-2 w-100">
+                <button
+                  className="btn btn-outline-secondary flex-fill rounded-pill"
+                  onClick={() => setShowClearOrdersConfirm(false)}
+                >
+                  إلغاء
+                </button>
+                <button
+                  className="btn btn-danger flex-fill rounded-pill"
+                  onClick={handleConfirmClearOrders}
+                >
+                  نعم، احذف الكل
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+));
+
 function OrdersPage() {
   const { orders, isLoading, isInitialized, clearAllOrders } = useOrders();
   const navigate = useNavigate();
-  
+ 
   // State management محسنة
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -121,7 +439,7 @@ function OrdersPage() {
   const [activeFilterCount, setActiveFilterCount] = useState(0);
   const [generatingInvoice, setGeneratingInvoice] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  
+ 
   // ✅ تحسين: State للنوافذ مع تهيئة افتراضية
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedOrderForRating, setSelectedOrderForRating] = useState(null);
@@ -260,7 +578,7 @@ function OrdersPage() {
   const getStatusText = useCallback((status) => {
     const statusMap = {
       'processing': 'قيد المعالجة',
-      'shipped': 'تم الشحن', 
+      'shipped': 'تم الشحن',
       'delivered': 'تم التوصيل',
       'cancelled': 'ملغي',
       'confirmed': 'تم التأكيد',
@@ -273,20 +591,20 @@ function OrdersPage() {
   // ✅ تحسين كبير: تبسيط دوال حساب القيم
   const calculateOrderValues = useCallback((order) => {
     const items = order.items || [];
-    
+   
     // حساب إجمالي المنتجات بدون ضريبة
     const itemsTotal = items.reduce((sum, item) => {
       const price = item.price || 0;
       const quantity = item.quantity || 1;
       return sum + (price * quantity);
     }, 0);
-    
+   
     // تكلفة الشحن
     const shippingCost = order.shipping?.cost || 0;
-    
+   
     // السعر الإجمالي (من البيانات المخزنة أو المحسوب) - بدون ضريبة
     const totalAmount = order.total || (itemsTotal + shippingCost);
-    
+   
     return {
       subtotal: itemsTotal,
       shipping: shippingCost,
@@ -298,13 +616,13 @@ function OrdersPage() {
   // ✅ تحسين كبير: تبسيط دالة إنشاء الفاتورة
   const generateAndDownloadInvoice = useCallback(async (order) => {
     setGeneratingInvoice(order.id);
-    
+   
     try {
       // محاكاة تأخير قصير
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+     
       const orderValues = calculateOrderValues(order);
-      
+     
       const invoiceContent = `
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -379,16 +697,16 @@ function OrdersPage() {
   // ✅ تحسين كبير: تبسيط الفلترة مع تقليل العمليات الحسابية
   const filteredOrders = useMemo(() => {
     if (!orders || !Array.isArray(orders)) return [];
-    
+   
     const now = Date.now();
     const last30Days = now - (30 * 24 * 60 * 60 * 1000);
     const last90Days = now - (90 * 24 * 60 * 60 * 1000);
-    
+   
     return orders
       .filter(order => {
         if (!order || typeof order !== 'object') return false;
-        
-        const matchesSearch = searchTerm ? 
+       
+        const matchesSearch = searchTerm ?
           (order.id && order.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (order.items && Array.isArray(order.items) && order.items.some(item =>
             item && item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -426,7 +744,7 @@ function OrdersPage() {
     const validOrders = orders.filter(order => order && typeof order === 'object');
     const total = validOrders.length;
     const delivered = validOrders.filter(order => order.status === 'delivered').length;
-    
+   
     const totalSpent = validOrders.reduce((sum, order) => sum + (order.total || 0), 0);
     const averageOrderValue = total > 0 ? totalSpent / total : 0;
     const deliverySuccessRate = total > 0 ? (delivered / total) * 100 : 0;
@@ -542,307 +860,6 @@ function OrdersPage() {
     addNotification('info', 'تم مسح جميع الفلاتر');
   }, [addNotification]);
 
-  // ✅ تحسين: مكون شارة الحالة المحسن
-  const StatusBadge = React.memo(({ status }) => {
-    const config = statusConfig[status] || statusConfig.unknown;
-    const IconComponent = config.icon;
-   
-    return (
-      <motion.span
-        whileHover={{ scale: 1.05 }}
-        className={`badge ${config.bgColor} text-white d-flex align-items-center shadow-sm`}
-        style={{ 
-          borderRadius: '20px',
-          padding: '8px 12px',
-          fontSize: '0.75rem',
-          fontWeight: '600'
-        }}
-      >
-        <IconComponent className="me-1" size={12} />
-        {config.text}
-      </motion.span>
-    );
-  });
-
-  // ✅ تحسين: مكون بطاقة الإحصائيات المحسن
-  const StatCard = React.memo(({ icon: Icon, value, label, subtext, color, delay = 0 }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="col-xl-3 col-md-6 col-6 mb-3"
-    >
-      <div className="card stat-card border-0 shadow-sm h-100">
-        <div className="card-body p-4">
-          <div className="d-flex align-items-center">
-            <div className={`stat-icon me-3 bg-${color}`}>
-              <Icon className="text-white" size={24} />
-            </div>
-            <div className="flex-grow-1">
-              <h3 className="stat-value fw-bold mb-1 text-dark">{value}</h3>
-              <p className="stat-label text-muted mb-1">{label}</p>
-              {subtext && <small className="text-muted">{subtext}</small>}
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  ));
-
-  // ✅ تحسين: مكون بطاقة الطلب المحسن مع React.memo
-  const OrderCard = React.memo(({ order, index }) => {
-    const config = statusConfig[order.status] || statusConfig.unknown;
-    const items = order.items || [];
-    const orderValues = calculateOrderValues(order);
-    
-    const canRate = isOrderEligibleForRating(order);
-    const canTrack = isOrderEligibleForTracking(order);
-   
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1 }}
-        className="col-12 mb-4"
-      >
-        <div className="card order-card border-0 shadow-lg h-100">
-          <div className="card-header bg-white border-0 pb-0">
-            <div className="row align-items-center">
-              <div className="col-md-8">
-                <div className="d-flex align-items-center">
-                  <div className="me-3">
-                    <div className="order-icon">
-                      <FaBox className="text-primary fs-4" />
-                    </div>
-                  </div>
-                  <div>
-                    <h5 className="mb-1 fw-bold text-dark">{order.id || "طلب غير معروف"}</h5>
-                    <small className="text-muted d-flex align-items-center">
-                      <FaCalendarAlt className="me-1" size={12} />
-                      {order.date ? new Date(order.date).toLocaleDateString('ar-SA', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : "تاريخ غير معروف"}
-                    </small>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-4 text-md-end">
-                <div className="d-flex flex-column align-items-md-end">
-                  <StatusBadge status={order.status} />
-                  <div className="mt-2">
-                    <strong className="text-primary fs-4">$${orderValues.total.toFixed(2)}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-         
-          <div className="card-body">
-            {/* ✅ تبسيط عرض المنتجات */}
-            <div className="order-items mb-4">
-              <h6 className="fw-bold mb-3 d-flex align-items-center text-dark">
-                <FaShoppingBag className="me-2 text-primary" />
-                المنتجات (${items.length})
-              </h6>
-             
-              <div className="row g-2">
-                {items.slice(0, 4).map((item, itemIndex) => (
-                  <div key={item.id || itemIndex} className="col-lg-3 col-md-4 col-sm-6 col-6">
-                    <div className="product-item-card border-0 bg-white rounded-3 h-100 d-flex flex-column shadow-sm p-2">
-                      <div className="product-image-container position-relative overflow-hidden rounded-top">
-                        <img
-                          src={item.image || item.images?.[0] || "/assets/img/placeholder.jpg"}
-                          alt={item.name}
-                          className="product-image w-100"
-                          style={{ height: '80px', objectFit: 'cover' }}
-                          loading="lazy"
-                          onError={(e) => {
-                            e.target.src = "/assets/img/placeholder.jpg";
-                          }}
-                        />
-                        <span className="position-absolute top-0 start-0 badge bg-dark bg-opacity-75 m-1 small">
-                          {item.quantity}x
-                        </span>
-                      </div>
-                      <div className="product-info flex-grow-1 d-flex flex-column mt-2">
-                        <h6 className="product-name fw-semibold mb-1 text-dark small text-truncate">
-                          {item.name || item.title || "منتج غير معروف"}
-                        </h6>
-                        <div className="mt-auto">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <span className="fw-bold text-primary small">
-                              $${(item.price || 0).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {items.length > 4 && (
-                  <div className="col-12 text-center mt-2">
-                    <span className="text-muted small">+ {items.length - 4} منتجات إضافية</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ✅ تبسيط ملخص الطلب */}
-            <div className="order-summary border-top pt-3">
-              <div className="row g-2">
-                <div className="col-lg-3 col-md-6 col-6">
-                  <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
-                    <small className="text-muted d-block mb-1">حالة الطلب</small>
-                    <StatusBadge status={order.status} />
-                  </div>
-                </div>
-                
-                <div className="col-lg-3 col-md-6 col-6">
-                  <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
-                    <small className="text-muted d-block mb-1">القيمة الإجمالية</small>
-                    <strong className="text-success fs-6 d-block">
-                      $${orderValues.subtotal.toFixed(2)}
-                    </strong>
-                  </div>
-                </div>
-                
-                <div className="col-lg-3 col-md-6 col-6">
-                  <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
-                    <small className="text-muted d-block mb-1">الإجمالي النهائي</small>
-                    <strong className="text-primary fs-6 d-block">
-                      $${orderValues.total.toFixed(2)}
-                    </strong>
-                  </div>
-                </div>
-                
-                <div className="col-lg-3 col-md-6 col-6">
-                  <div className="summary-item text-center p-2 rounded-3 bg-light h-100">
-                    <small className="text-muted d-block mb-1">طريقة الدفع</small>
-                    <strong className="text-info d-block small">
-                      {order.payment?.method || "غير محدد"}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-         
-          <div className="card-footer bg-white border-top-0 pt-0">
-            <div className="d-flex gap-2 flex-wrap justify-content-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn btn-primary btn-sm rounded-pill px-3"
-                onClick={() => handleQuickView(order)}
-              >
-                <FaEye className="me-1" />
-                عرض سريع
-              </motion.button>
-              
-              {canTrack && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="btn btn-info btn-sm rounded-pill px-3"
-                  onClick={() => handleTrackOrder(order)}
-                >
-                  <FaTruck className="me-1" />
-                  تتبع الشحن
-                </motion.button>
-              )}
-
-              {canRate && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="btn btn-warning btn-sm rounded-pill px-3"
-                  onClick={() => handleOpenRatingModal(order)}
-                >
-                  <FaStar className="me-1" />
-                  تقييم
-                </motion.button>
-              )}
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn btn-success btn-sm rounded-pill px-3"
-                onClick={() => handleDownloadInvoice(order)}
-                disabled={generatingInvoice === order.id}
-              >
-                {generatingInvoice === order.id ? (
-                  <>
-                    <div className="spinner-border spinner-border-sm me-2" role="status">
-                      <span className="visually-hidden">جاري التحميل...</span>
-                    </div>
-                    جاري التحميل...
-                  </>
-                ) : (
-                  <>
-                    <FaDownload className="me-1" />
-                    فاتورة
-                  </>
-                )}
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  });
-
-  // ✅ نموذج تأكيد الحذف المحسن
-  const ClearOrdersConfirmationModal = React.memo(() => (
-    <AnimatePresence>
-      {showClearOrdersConfirm && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="modal show d-block"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999 }}
-          onClick={() => setShowClearOrdersConfirm(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            className="modal-dialog modal-dialog-centered"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '20px' }}>
-              <div className="modal-header bg-danger text-white border-0">
-                <h5 className="modal-title mb-0 fw-bold">تأكيد الحذف</h5>
-              </div>
-              <div className="modal-body py-4 text-center">
-                <h4 className="fw-bold text-dark mb-3">حذف جميع الطلبات</h4>
-                <p className="text-muted mb-4">هل أنت متأكد من رغبتك في حذف جميع الطلبات؟ لا يمكن التراجع عن هذا الإجراء.</p>
-              </div>
-              <div className="modal-footer border-0 bg-light">
-                <div className="d-flex gap-2 w-100">
-                  <button
-                    className="btn btn-outline-secondary flex-fill rounded-pill"
-                    onClick={() => setShowClearOrdersConfirm(false)}
-                  >
-                    إلغاء
-                  </button>
-                  <button
-                    className="btn btn-danger flex-fill rounded-pill"
-                    onClick={handleConfirmClearOrders}
-                  >
-                    نعم، احذف الكل
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  ));
-
   // ✅ تحسين: شاشة التحميل المحسنة
   if (isLoading || !isInitialized) {
     return (
@@ -877,18 +894,18 @@ function OrdersPage() {
       {/* ✅ تحسين: تحميل المكونات الكبيرة بشكل كسول */}
       <Suspense fallback={<div className="loading-placeholder" />}>
         {trackingModalOpen && (
-          <TrackingModal 
-            order={selectedOrderForTracking} 
+          <TrackingModal
+            order={selectedOrderForTracking}
             onClose={() => {
               setTrackingModalOpen(false);
               setSelectedOrderForTracking(null);
-            }} 
+            }}
           />
         )}
 
         {ratingModalOpen && (
-          <RatingModal 
-            order={selectedOrderForRating} 
+          <RatingModal
+            order={selectedOrderForRating}
             onClose={() => {
               setRatingModalOpen(false);
               setSelectedOrderForRating(null);
@@ -898,7 +915,7 @@ function OrdersPage() {
         )}
 
         {quickViewOrder && (
-          <QuickViewModal 
+          <QuickViewModal
             order={quickViewOrder}
             onClose={() => setQuickViewOrder(null)}
             onTrackOrder={handleTrackOrder}
@@ -1027,10 +1044,23 @@ function OrdersPage() {
             <>
               <div className="row">
                 {ordersToShow.map((order, index) => (
-                  <OrderCard key={order.id} order={order} index={index} />
+                  <OrderCard 
+                    key={order.id} 
+                    order={order} 
+                    index={index}
+                    statusConfig={statusConfig}
+                    calculateOrderValues={calculateOrderValues}
+                    isOrderEligibleForRating={isOrderEligibleForRating}
+                    isOrderEligibleForTracking={isOrderEligibleForTracking}
+                    handleQuickView={handleQuickView}
+                    handleTrackOrder={handleTrackOrder}
+                    handleOpenRatingModal={handleOpenRatingModal}
+                    handleDownloadInvoice={handleDownloadInvoice}
+                    generatingInvoice={generatingInvoice}
+                  />
                 ))}
               </div>
-              
+             
               {hasMoreOrders && (
                 <div className="text-center mt-4">
                   <button onClick={handleLoadMore} className="btn btn-primary btn-lg rounded-pill px-5">
@@ -1055,7 +1085,11 @@ function OrdersPage() {
         </div>
       </div>
 
-      <ClearOrdersConfirmationModal />
+      <ClearOrdersConfirmationModal 
+        showClearOrdersConfirm={showClearOrdersConfirm}
+        setShowClearOrdersConfirm={setShowClearOrdersConfirm}
+        handleConfirmClearOrders={handleConfirmClearOrders}
+      />
 
       <style>{`
         .orders-page {
