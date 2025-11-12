@@ -478,7 +478,7 @@ function Features({ onSectionView }) {
                         </div>
 
                         {/* Description مختصر */}
-                        {/* <p
+                        <p
                           className="small mb-3"
                           style={{
                             color: darkMode ? "#cbd5e0" : "#64748b",
@@ -486,7 +486,7 @@ function Features({ onSectionView }) {
                           }}
                         >
                           {quickView.description}
-                        </p> */}
+                        </p>
 
                         {/* Color Selection مضغوط */}
                         {quickView.colors && quickView.colors.length > 0 && (
@@ -835,7 +835,6 @@ function Features({ onSectionView }) {
                         style={{
                           height: "280px",
                           objectFit: "cover",
-                          transition: "transform 0.6s ease",
                           transform: hoveredCard === product.id ? "scale(1.1)" : "scale(1)",
                           opacity: imageLoaded[product.id] ? 1 : 0.7,
                           transition: "opacity 0.3s ease, transform 0.6s ease",
